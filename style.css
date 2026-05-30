@@ -330,6 +330,22 @@ textarea {
   color: var(--primary-dark);
 }
 
+.quick-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.quick-add label {
+  display: none;
+}
+
+.quick-add button {
+  white-space: nowrap;
+}
+
 textarea:focus,
 input:focus {
   border-color: var(--primary);
@@ -718,6 +734,73 @@ body.practice-active #emptyWrongBookText {
   font-weight: 700;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 31, 38, 0.42);
+}
+
+.modal-dialog {
+  display: grid;
+  gap: 12px;
+  width: min(440px, 100%);
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.modal-dialog h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.modal-dialog p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.modal-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.modal-field {
+  display: grid;
+  gap: 6px;
+}
+
+.modal-field label {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.modal-error {
+  color: var(--danger) !important;
+  font-weight: 700;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-confirm-danger {
+  color: #ffffff;
+  background: var(--danger);
+}
+
+.modal-confirm-danger:hover:not(:disabled) {
+  background: #9f3227;
+}
+
 @media (max-height: 760px) and (min-width: 761px) {
   .app {
     padding-top: 8px;
@@ -911,9 +994,14 @@ body.practice-active #emptyWrongBookText {
 
   .library-summary,
   .round-result-grid,
+  .quick-add,
   .answer-row,
   .word-item {
     grid-template-columns: 1fr;
+  }
+
+  .quick-add label {
+    display: block;
   }
 
   .library-summary {

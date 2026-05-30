@@ -12,6 +12,9 @@ const libraryList = document.querySelector("#libraryList");
 const activeLibraryName = document.querySelector("#activeLibraryName");
 const activeLibraryNameForInput = document.querySelector("#activeLibraryNameForInput");
 
+const quickEnglishInput = document.querySelector("#quickEnglishInput");
+const quickChineseInput = document.querySelector("#quickChineseInput");
+const quickAddBtn = document.querySelector("#quickAddBtn");
 const wordInput = document.querySelector("#wordInput");
 const generateBtn = document.querySelector("#generateBtn");
 const clearInputBtn = document.querySelector("#clearInputBtn");
@@ -47,6 +50,14 @@ const wrongBookToggleBtn = document.querySelector("#wrongBookToggleBtn");
 const wrongBookList = document.querySelector("#wrongBookList");
 const wrongBookCount = document.querySelector("#wrongBookCount");
 const emptyWrongBookText = document.querySelector("#emptyWrongBookText");
+const appModal = document.querySelector("#appModal");
+const modalDialog = document.querySelector("#modalDialog");
+const modalTitle = document.querySelector("#modalTitle");
+const modalDescription = document.querySelector("#modalDescription");
+const modalFields = document.querySelector("#modalFields");
+const modalError = document.querySelector("#modalError");
+const modalCancelBtn = document.querySelector("#modalCancelBtn");
+const modalConfirmBtn = document.querySelector("#modalConfirmBtn");
 
 let libraries = loadLibraries();
 let currentLibraryId = loadCurrentLibraryId();
@@ -61,6 +72,7 @@ let practiceSourceWords = [];
 let practiceIndex = 0;
 let currentRound = 0;
 let roundStats = createEmptyRoundStats();
+let activeModal = null;
 let stats = {
   correct: 0,
   wrong: 0,
@@ -85,34 +97,53 @@ libraryNameInput.addEventListener("keydown", (event) => {
   }
 });
 
+quickAddBtn.addEventListener("click", addQuickWord);
+
+quickEnglishInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    quickChineseInput.focus();
+  }
+});
+
+quickChineseInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addQuickWord();
+  }
+});
+
 generateBtn.addEventListener("click", () => {
   const parsedWords = parseWords(wordInput.value);
 
   if (parsedWords.length === 0) {
-    showInputMessage("没有识别到有效单词，请使用“英文 - 中文意思”的格式。", "error");
+    showInputMessage("没有识别到有效单词，请使用“英文 - 中文意思”等格式。", "error");
     return;
   }
 
-  words = mergeWords(words, parsedWords);
-  saveCurrentWords(words);
-  renderCurrentLibrary();
-  renderLibraryList();
-  showInputMessage(`已添加到“${getCurrentLibrary().name}”，当前共有 ${words.length} 个单词。`, "success");
+  addWordsToCurrentLibrary(parsedWords);
 });
 
 clearInputBtn.addEventListener("click", () => {
   wordInput.value = "";
+  quickEnglishInput.value = "";
+  quickChineseInput.value = "";
   showInputMessage("输入框已清空。");
-  wordInput.focus();
+  quickEnglishInput.focus();
 });
 
-clearLibraryBtn.addEventListener("click", () => {
+clearLibraryBtn.addEventListener("click", async () => {
   if (words.length === 0) {
     showInputMessage("当前词库已经是空的。");
     return;
   }
 
-  const confirmed = confirm(`确定要清空“${getCurrentLibrary().name}”里的所有单词吗？这个操作不能撤销。`);
+  const confirmed = await openModal({
+    title: "清空当前词库",
+    description: `确定要清空“${getCurrentLibrary().name}”里的所有单词和错词记录吗？这个操作不能撤销。`,
+    confirmText: "清空词库",
+    variant: "danger"
+  });
 
   if (!confirmed) {
     return;
@@ -155,6 +186,25 @@ showAnswerBtn.addEventListener("click", showCurrentAnswer);
 wrongBookToggleBtn.addEventListener("click", () => {
   wrongBookExpanded = !wrongBookExpanded;
   renderWrongBook();
+});
+
+modalCancelBtn.addEventListener("click", closeModal);
+
+appModal.addEventListener("click", (event) => {
+  if (event.target === appModal) {
+    closeModal();
+  }
+});
+
+modalDialog.addEventListener("submit", (event) => {
+  event.preventDefault();
+  confirmModal();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && activeModal) {
+    closeModal();
+  }
 });
 
 submitBtn.addEventListener("click", checkAnswer);
@@ -223,20 +273,71 @@ function switchLibrary(libraryId) {
   showInputMessage(`已切换到“${getCurrentLibrary().name}”。`);
 }
 
+function addQuickWord() {
+  const english = quickEnglishInput.value.trim().toLowerCase();
+  const chinese = normalizeChineseMeaning(quickChineseInput.value);
+
+  if (!english) {
+    showInputMessage("请先输入英文单词。", "error");
+    quickEnglishInput.focus();
+    return;
+  }
+
+  if (!chinese) {
+    showInputMessage("请填写中文意思。", "error");
+    quickChineseInput.focus();
+    return;
+  }
+
+  const result = addWordsToCurrentLibrary([
+    {
+      english,
+      chinese
+    }
+  ]);
+
+  if (result.added > 0) {
+    quickEnglishInput.value = "";
+    quickChineseInput.value = "";
+    quickEnglishInput.focus();
+  }
+}
+
+function addWordsToCurrentLibrary(newWords) {
+  const result = mergeWords(words, newWords);
+  words = result.words;
+  saveCurrentWords(words);
+  renderCurrentLibrary();
+  renderLibraryList();
+
+  const messages = [];
+
+  if (result.added > 0) {
+    messages.push(`已添加 ${result.added} 个单词`);
+  }
+
+  if (result.skipped > 0) {
+    messages.push(`跳过 ${result.skipped} 个重复单词`);
+  }
+
+  showInputMessage(`${messages.join("，")}。当前共有 ${words.length} 个单词。`, result.added > 0 ? "success" : "error");
+  return result;
+}
+
 function parseWords(text) {
   return text
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const parts = line.split(/\s*[-—–]\s*/);
+      const parts = line.split(/\s*(?:\t|[-—–：:=])\s*/);
 
       if (parts.length < 2) {
         return null;
       }
 
       const english = parts[0].trim().toLowerCase();
-      const chinese = parts.slice(1).join(" - ").trim();
+      const chinese = normalizeChineseMeaning(parts.slice(1).join(" "));
 
       if (!english || !chinese) {
         return null;
@@ -252,12 +353,34 @@ function parseWords(text) {
 
 function mergeWords(oldWords, newWords) {
   const wordMap = new Map();
+  let added = 0;
+  let skipped = 0;
 
-  // 用英文单词当作唯一标识，重复录入时更新中文意思。
+  // 用英文单词当作唯一标识，重复录入时跳过。
   oldWords.forEach((item) => wordMap.set(item.english, item));
-  newWords.forEach((item) => wordMap.set(item.english, item));
+  newWords.forEach((item) => {
+    if (wordMap.has(item.english)) {
+      skipped += 1;
+      return;
+    }
 
-  return Array.from(wordMap.values()).sort((a, b) => a.english.localeCompare(b.english));
+    wordMap.set(item.english, item);
+    added += 1;
+  });
+
+  return {
+    words: Array.from(wordMap.values()).sort((a, b) => a.english.localeCompare(b.english)),
+    added,
+    skipped
+  };
+}
+
+function normalizeChineseMeaning(text) {
+  return text
+    .split(/[；;，,、/|｜]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join("；");
 }
 
 function renderLibraryList() {
@@ -301,30 +424,37 @@ function renderLibraryList() {
   });
 }
 
-function renameLibrary(libraryId) {
+async function renameLibrary(libraryId) {
   const library = libraries.find((item) => item.id === libraryId);
 
   if (!library) {
     return;
   }
 
-  const newName = prompt("请输入新的词库名称：", library.name);
+  const result = await openModal({
+    title: "重命名词库",
+    description: "请输入新的词库名称。",
+    confirmText: "保存名称",
+    fields: [
+      {
+        id: "name",
+        label: "词库名称",
+        value: library.name,
+        required: true
+      }
+    ]
+  });
 
-  if (newName === null) {
+  if (!result) {
     return;
   }
 
-  const cleanedName = newName.trim();
-
-  if (!cleanedName) {
-    alert("词库名称不能为空。");
-    return;
-  }
+  const cleanedName = result.name.trim();
 
   const duplicated = libraries.some((item) => item.id !== libraryId && item.name === cleanedName);
 
   if (duplicated) {
-    alert("这个词库名称已经存在，请换一个名称。");
+    showInputMessage("这个词库名称已经存在，请换一个名称。", "error");
     return;
   }
 
@@ -335,7 +465,7 @@ function renameLibrary(libraryId) {
   showInputMessage(`词库已重命名为“${cleanedName}”。`, "success");
 }
 
-function deleteLibrary(libraryId) {
+async function deleteLibrary(libraryId) {
   const library = libraries.find((item) => item.id === libraryId);
 
   if (!library) {
@@ -343,11 +473,16 @@ function deleteLibrary(libraryId) {
   }
 
   if (libraries.length === 1) {
-    alert("至少需要保留一个词库。");
+    showInputMessage("至少需要保留一个词库。", "error");
     return;
   }
 
-  const confirmed = confirm(`确定要删除“${library.name}”吗？里面的单词也会一起删除。`);
+  const confirmed = await openModal({
+    title: "删除词库",
+    description: `确定要删除“${library.name}”吗？里面的单词和错词记录也会一起删除。`,
+    confirmText: "删除词库",
+    variant: "danger"
+  });
 
   if (!confirmed) {
     return;
@@ -488,38 +623,39 @@ function renderWordList() {
   });
 }
 
-function editWord(oldEnglish) {
+async function editWord(oldEnglish) {
   const oldWord = words.find((word) => word.english === oldEnglish);
 
   if (!oldWord) {
     return;
   }
 
-  const newEnglish = prompt("修改英文单词：", oldWord.english);
+  const result = await openModal({
+    title: "编辑单词",
+    description: "修改当前词条的英文单词和中文意思。",
+    confirmText: "保存修改",
+    fields: [
+      {
+        id: "english",
+        label: "英文单词",
+        value: oldWord.english,
+        required: true
+      },
+      {
+        id: "chinese",
+        label: "中文意思",
+        value: oldWord.chinese,
+        required: true
+      }
+    ]
+  });
 
-  if (newEnglish === null) {
+  if (!result) {
     return;
   }
 
-  const cleanedEnglish = newEnglish.trim().toLowerCase();
-
-  if (!cleanedEnglish) {
-    alert("英文单词不能为空。");
-    return;
-  }
-
-  const newChinese = prompt("修改中文意思：", oldWord.chinese);
-
-  if (newChinese === null) {
-    return;
-  }
-
-  const cleanedChinese = newChinese.trim();
-
-  if (!cleanedChinese) {
-    alert("中文意思不能为空。");
-    return;
-  }
+  const cleanedEnglish = result.english.trim().toLowerCase();
+  const cleanedChinese = result.chinese.trim();
 
   // 编辑时只在当前词库内去重，不影响其他词库。
   words = words.filter((word) => word.english !== oldEnglish && word.english !== cleanedEnglish);
@@ -967,6 +1103,106 @@ function showPracticeMessage(text, type) {
     feedbackText.textContent = text;
     feedbackText.className = type === "error" ? "feedback wrong" : "feedback";
   }
+}
+
+function openModal(options) {
+  const {
+    title,
+    description,
+    fields = [],
+    confirmText = "确认",
+    cancelText = "取消",
+    variant = "default"
+  } = options;
+
+  modalTitle.textContent = title;
+  modalDescription.textContent = description;
+  modalConfirmBtn.textContent = confirmText;
+  modalCancelBtn.textContent = cancelText;
+  modalConfirmBtn.className = variant === "danger" ? "modal-confirm-danger" : "primary-btn";
+  modalError.hidden = true;
+  modalError.textContent = "";
+  modalFields.innerHTML = "";
+
+  fields.forEach((field) => {
+    const fieldWrap = document.createElement("div");
+    fieldWrap.className = "modal-field";
+
+    const label = document.createElement("label");
+    label.setAttribute("for", `modal-field-${field.id}`);
+    label.textContent = field.label;
+
+    const input = document.createElement("input");
+    input.id = `modal-field-${field.id}`;
+    input.name = field.id;
+    input.type = field.type || "text";
+    input.value = field.value || "";
+    input.placeholder = field.placeholder || "";
+    input.dataset.required = field.required ? "true" : "false";
+
+    fieldWrap.append(label, input);
+    modalFields.appendChild(fieldWrap);
+  });
+
+  appModal.hidden = false;
+
+  const firstInput = modalFields.querySelector("input");
+  if (firstInput) {
+    firstInput.focus();
+    firstInput.select();
+  } else {
+    modalConfirmBtn.focus();
+  }
+
+  return new Promise((resolve) => {
+    activeModal = {
+      fields,
+      resolve
+    };
+  });
+}
+
+function confirmModal() {
+  if (!activeModal) {
+    return;
+  }
+
+  const values = {};
+
+  for (const field of activeModal.fields) {
+    const input = modalFields.querySelector(`[name="${field.id}"]`);
+    const value = input ? input.value.trim() : "";
+
+    if (field.required && !value) {
+      showModalError(`${field.label}不能为空。`);
+      input?.focus();
+      return;
+    }
+
+    values[field.id] = value;
+  }
+
+  const result = activeModal.fields.length > 0 ? values : true;
+  const resolver = activeModal.resolve;
+  activeModal = null;
+  appModal.hidden = true;
+  resolver(result);
+}
+
+function closeModal() {
+  if (!activeModal) {
+    return;
+  }
+
+  const resolver = activeModal.resolve;
+  activeModal = null;
+  appModal.hidden = true;
+  resolver(null);
+}
+
+function showModalError(message) {
+  modalError.textContent = message;
+  modalError.hidden = false;
 }
 
 function getCurrentLibrary() {
