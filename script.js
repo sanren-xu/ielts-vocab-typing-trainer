@@ -18,6 +18,7 @@ const totalCount = document.querySelector("#totalCount");
 const clearLibraryBtn = document.querySelector("#clearLibraryBtn");
 
 const startBtn = document.querySelector("#startBtn");
+const wrongOnlyBtn = document.querySelector("#wrongOnlyBtn");
 const practiceSection = document.querySelector("#practiceSection");
 const submitBtn = document.querySelector("#submitBtn");
 const resetStatsBtn = document.querySelector("#resetStatsBtn");
@@ -30,14 +31,26 @@ const wrongCount = document.querySelector("#wrongCount");
 const doneCount = document.querySelector("#doneCount");
 const roundCount = document.querySelector("#roundCount");
 const progressCount = document.querySelector("#progressCount");
+const roundResult = document.querySelector("#roundResult");
+const roundTotalCount = document.querySelector("#roundTotalCount");
+const roundCorrectCount = document.querySelector("#roundCorrectCount");
+const roundWrongCount = document.querySelector("#roundWrongCount");
+const roundWrongWordCount = document.querySelector("#roundWrongWordCount");
+const practiceAgainBtn = document.querySelector("#practiceAgainBtn");
+const practiceWrongAgainBtn = document.querySelector("#practiceWrongAgainBtn");
+const wrongBookList = document.querySelector("#wrongBookList");
+const wrongBookCount = document.querySelector("#wrongBookCount");
+const emptyWrongBookText = document.querySelector("#emptyWrongBookText");
 
 let libraries = loadLibraries();
 let currentLibraryId = loadCurrentLibraryId();
 let words = getCurrentWords();
 let currentWord = null;
 let practiceQueue = [];
+let practiceSourceWords = [];
 let practiceIndex = 0;
 let currentRound = 0;
+let roundStats = createEmptyRoundStats();
 let stats = {
   correct: 0,
   wrong: 0,
@@ -93,6 +106,7 @@ clearLibraryBtn.addEventListener("click", () => {
 
   words = [];
   currentWord = null;
+  getCurrentLibrary().wrongWords = [];
   saveCurrentWords(words);
   renderCurrentLibrary();
   renderLibraryList();
@@ -106,15 +120,23 @@ startBtn.addEventListener("click", () => {
     return;
   }
 
-  practiceSection.hidden = false;
-  setPracticeEnabled(true);
-  startPracticeQueue();
-  pickNextWord();
-  practiceSection.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
+  startPractice(words, "全部单词");
 });
+
+wrongOnlyBtn.addEventListener("click", () => {
+  startWrongWordsPractice();
+});
+
+practiceAgainBtn.addEventListener("click", () => {
+  if (words.length === 0) {
+    showInputMessage("请先给当前词库添加单词，再开始练习。", "error");
+    return;
+  }
+
+  startPractice(words, "全部单词");
+});
+
+practiceWrongAgainBtn.addEventListener("click", startWrongWordsPractice);
 
 submitBtn.addEventListener("click", checkAnswer);
 
@@ -150,7 +172,8 @@ function createLibrary() {
   const newLibrary = {
     id: createLibraryId(),
     name,
-    words: []
+    words: [],
+    wrongWords: []
   };
 
   libraries.push(newLibrary);
@@ -336,6 +359,7 @@ function renderCurrentLibrary() {
   activeLibraryName.textContent = currentLibrary.name;
   activeLibraryNameForInput.textContent = currentLibrary.name;
   renderWordList();
+  renderWrongBook();
 }
 
 function renderWordList() {
@@ -428,6 +452,10 @@ function editWord(oldEnglish) {
     english: cleanedEnglish,
     chinese: cleanedChinese
   });
+  updateWrongBookWord(oldEnglish, {
+    english: cleanedEnglish,
+    chinese: cleanedChinese
+  });
 
   saveCurrentWords(words);
   renderCurrentLibrary();
@@ -439,6 +467,7 @@ function deleteWord(english) {
 
   words = words.filter((word) => word.english !== english);
   removeWordFromPracticeQueue(english);
+  removeWrongBookWord(english);
   saveCurrentWords(words);
   renderCurrentLibrary();
   renderLibraryList();
@@ -460,6 +489,7 @@ function hidePracticeSection() {
   setPracticeEnabled(false);
   currentWord = null;
   resetPracticeQueue();
+  hideRoundResult();
   answerInput.value = "";
   meaningText.textContent = "请先点击开始练习";
   hintText.textContent = "_";
@@ -467,23 +497,49 @@ function hidePracticeSection() {
   feedbackText.className = "feedback";
 }
 
-function startPracticeQueue() {
-  practiceQueue = shuffleWords(words);
+function startPractice(sourceWords, modeName) {
+  practiceSection.hidden = false;
+  setPracticeEnabled(true);
+  hideRoundResult();
+  startPracticeQueue(sourceWords, modeName);
+  pickNextWord();
+  practiceSection.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function startWrongWordsPractice() {
+  const wrongWords = getCurrentWrongWords();
+
+  if (wrongWords.length === 0) {
+    showInputMessage("当前词库暂无错词。", "error");
+    return;
+  }
+
+  startPractice(wrongWords, "错词");
+}
+
+function startPracticeQueue(sourceWords, modeName) {
+  practiceSourceWords = sourceWords.map((word) => ({ ...word }));
+  practiceQueue = shuffleWords(practiceSourceWords);
   practiceIndex = 0;
-  currentRound = 1;
+  currentRound += 1;
+  roundStats = createEmptyRoundStats(practiceQueue.length);
+  feedbackText.textContent = `正在练习：${modeName}。`;
+  feedbackText.className = "feedback";
   renderPracticeProgress();
 }
 
 function pickNextWord() {
-  if (words.length === 0) {
+  if (practiceSourceWords.length === 0) {
     hidePracticeSection();
     return;
   }
 
-  if (practiceQueue.length === 0 || practiceIndex >= practiceQueue.length) {
-    practiceQueue = shuffleWords(words);
-    practiceIndex = 0;
-    currentRound += 1;
+  if (practiceIndex >= practiceQueue.length) {
+    showRoundComplete();
+    return;
   }
 
   currentWord = practiceQueue[practiceIndex];
@@ -511,28 +567,69 @@ function shuffleWords(sourceWords) {
 
 function resetPracticeQueue() {
   practiceQueue = [];
+  practiceSourceWords = [];
   practiceIndex = 0;
   currentRound = 0;
+  roundStats = createEmptyRoundStats();
   renderPracticeProgress();
 }
 
 function renderPracticeProgress() {
   roundCount.textContent = currentRound;
-  progressCount.textContent = `${currentWord ? practiceIndex : 0} / ${practiceQueue.length}`;
+  progressCount.textContent = `${Math.min(practiceIndex, practiceQueue.length)} / ${practiceQueue.length}`;
+}
+
+function createEmptyRoundStats(total = 0) {
+  return {
+    total,
+    correct: 0,
+    wrong: 0,
+    wrongWords: new Set()
+  };
+}
+
+function showRoundComplete() {
+  currentWord = null;
+  setPracticeEnabled(false);
+  answerInput.value = "";
+  meaningText.textContent = "本轮完成";
+  hintText.textContent = "_";
+  feedbackText.textContent = "本轮完成，可以再练一轮，或只练错词。";
+  feedbackText.className = "feedback correct";
+  roundTotalCount.textContent = roundStats.total;
+  roundCorrectCount.textContent = roundStats.correct;
+  roundWrongCount.textContent = roundStats.wrong;
+  roundWrongWordCount.textContent = roundStats.wrongWords.size;
+  roundResult.hidden = false;
+  renderPracticeProgress();
+}
+
+function hideRoundResult() {
+  roundResult.hidden = true;
 }
 
 function updatePracticeQueueWord(oldEnglish, updatedWord) {
+  practiceSourceWords = practiceSourceWords.map((word) => {
+    if (word.english !== oldEnglish) {
+      return word;
+    }
+
+    return { ...word, ...updatedWord };
+  });
+
   practiceQueue = practiceQueue.map((word) => {
     if (word.english !== oldEnglish) {
       return word;
     }
 
-    return { ...updatedWord };
+    return { ...word, ...updatedWord };
   });
   renderPracticeProgress();
 }
 
 function removeWordFromPracticeQueue(english) {
+  practiceSourceWords = practiceSourceWords.filter((word) => word.english !== english);
+
   const removedBeforeCurrentIndex = practiceQueue
     .slice(0, practiceIndex)
     .filter((word) => word.english === english).length;
@@ -571,12 +668,13 @@ function checkAnswer() {
 
   if (userAnswer === currentWord.english) {
     stats.correct += 1;
+    roundStats.correct += 1;
     renderStats();
-    feedbackText.textContent = "拼写正确，进入下一题。";
+    feedbackText.textContent = practiceIndex >= practiceQueue.length ? "拼写正确，本轮完成。" : "拼写正确，进入下一题。";
     feedbackText.className = "feedback correct";
 
     setTimeout(() => {
-      if (words.length > 0 && !practiceSection.hidden) {
+      if (!practiceSection.hidden) {
         pickNextWord();
       }
     }, 650);
@@ -584,6 +682,9 @@ function checkAnswer() {
   }
 
   stats.wrong += 1;
+  roundStats.wrong += 1;
+  roundStats.wrongWords.add(currentWord.english);
+  addWrongWord(currentWord);
   renderStats();
   feedbackText.textContent = `拼写错误，正确答案是：${currentWord.english}`;
   feedbackText.className = "feedback wrong";
@@ -603,6 +704,86 @@ function renderStats() {
   correctCount.textContent = stats.correct;
   wrongCount.textContent = stats.wrong;
   doneCount.textContent = stats.done;
+}
+
+function addWrongWord(word) {
+  const currentLibrary = getCurrentLibrary();
+  const wrongWords = getCurrentWrongWords();
+  const matchedWord = wrongWords.find((item) => item.english === word.english);
+
+  if (matchedWord) {
+    matchedWord.chinese = word.chinese;
+    matchedWord.wrongCount += 1;
+  } else {
+    wrongWords.push({
+      english: word.english,
+      chinese: word.chinese,
+      wrongCount: 1
+    });
+  }
+
+  wrongWords.sort((a, b) => b.wrongCount - a.wrongCount || a.english.localeCompare(b.english));
+  currentLibrary.wrongWords = wrongWords;
+  saveLibraries();
+  renderWrongBook();
+}
+
+function renderWrongBook() {
+  const wrongWords = getCurrentWrongWords();
+  wrongBookList.innerHTML = "";
+  wrongBookCount.textContent = `${wrongWords.length} 个错词`;
+  emptyWrongBookText.hidden = wrongWords.length > 0;
+
+  wrongWords.forEach((word) => {
+    const item = document.createElement("li");
+    item.className = "wrong-book-item";
+
+    const english = document.createElement("strong");
+    english.textContent = word.english;
+
+    const chinese = document.createElement("span");
+    chinese.textContent = word.chinese;
+
+    const count = document.createElement("small");
+    count.textContent = `错误 ${word.wrongCount} 次`;
+
+    item.append(english, chinese, count);
+    wrongBookList.appendChild(item);
+  });
+}
+
+function updateWrongBookWord(oldEnglish, updatedWord) {
+  const currentLibrary = getCurrentLibrary();
+  const wrongWordMap = new Map();
+
+  getCurrentWrongWords().forEach((word) => {
+    const english = word.english === oldEnglish ? updatedWord.english : word.english;
+    const chinese = word.english === oldEnglish ? updatedWord.chinese : word.chinese;
+    const existingWord = wrongWordMap.get(english);
+
+    if (existingWord) {
+      existingWord.chinese = chinese;
+      existingWord.wrongCount += word.wrongCount;
+      return;
+    }
+
+    wrongWordMap.set(english, {
+      english,
+      chinese,
+      wrongCount: word.wrongCount
+    });
+  });
+
+  currentLibrary.wrongWords = Array.from(wrongWordMap.values()).sort((a, b) => b.wrongCount - a.wrongCount || a.english.localeCompare(b.english));
+  saveLibraries();
+  renderWrongBook();
+}
+
+function removeWrongBookWord(english) {
+  const currentLibrary = getCurrentLibrary();
+  currentLibrary.wrongWords = getCurrentWrongWords().filter((word) => word.english !== english);
+  saveLibraries();
+  renderWrongBook();
 }
 
 function setPracticeEnabled(enabled) {
@@ -629,6 +810,16 @@ function getCurrentLibrary() {
 
 function getCurrentWords() {
   return getCurrentLibrary().words;
+}
+
+function getCurrentWrongWords() {
+  const currentLibrary = getCurrentLibrary();
+
+  if (!Array.isArray(currentLibrary.wrongWords)) {
+    currentLibrary.wrongWords = [];
+  }
+
+  return currentLibrary.wrongWords;
 }
 
 function saveCurrentWords(newWords) {
@@ -680,7 +871,8 @@ function createDefaultLibraries() {
   const defaultLibrary = {
     id: createLibraryId(),
     name: "默认词库",
-    words: legacyWords
+    words: legacyWords,
+    wrongWords: []
   };
 
   localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify([defaultLibrary]));
@@ -706,7 +898,18 @@ function normalizeLibrary(library) {
   return {
     id: library.id || createLibraryId(),
     name: library.name || "未命名词库",
-    words: Array.isArray(library.words) ? library.words : []
+    words: Array.isArray(library.words) ? library.words : [],
+    wrongWords: Array.isArray(library.wrongWords) ? library.wrongWords.map(normalizeWrongWord) : []
+  };
+}
+
+function normalizeWrongWord(word = {}) {
+  const safeWord = word || {};
+
+  return {
+    english: safeWord.english || "",
+    chinese: safeWord.chinese || "",
+    wrongCount: Number.isFinite(safeWord.wrongCount) && safeWord.wrongCount > 0 ? safeWord.wrongCount : 1
   };
 }
 

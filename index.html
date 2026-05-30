@@ -46,6 +46,7 @@
               <strong>共 <span id="totalCount">0</span> 个单词</strong>
               <div class="actions inline-actions">
                 <button id="startBtn" class="primary-btn">开始练习</button>
+                <button id="wrongOnlyBtn" class="ghost-btn">只练错词</button>
                 <button id="clearLibraryBtn" class="danger-btn">清空当前词库</button>
               </div>
             </div>
@@ -109,6 +110,20 @@ estimate - 估计"></textarea>
               </div>
 
               <p id="feedbackText" class="feedback">请输入这个单词的完整英文拼写。</p>
+
+              <div id="roundResult" class="round-result" hidden>
+                <h3>本轮完成</h3>
+                <div class="round-result-grid">
+                  <div><strong id="roundTotalCount">0</strong><small>本轮总词数</small></div>
+                  <div><strong id="roundCorrectCount">0</strong><small>正确次数</small></div>
+                  <div><strong id="roundWrongCount">0</strong><small>错误次数</small></div>
+                  <div><strong id="roundWrongWordCount">0</strong><small>错词数量</small></div>
+                </div>
+                <div class="actions">
+                  <button id="practiceAgainBtn" class="primary-btn">再练一轮</button>
+                  <button id="practiceWrongAgainBtn" class="ghost-btn">只练错词</button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -128,6 +143,15 @@ estimate - 估计"></textarea>
 
             <div class="actions">
               <button id="resetStatsBtn" class="ghost-btn">重置统计</button>
+            </div>
+
+            <div class="wrong-book">
+              <div class="wrong-book-title">
+                <h3>错词本</h3>
+                <span id="wrongBookCount">0 个错词</span>
+              </div>
+              <ul id="wrongBookList" class="wrong-book-list"></ul>
+              <p id="emptyWrongBookText" class="empty">当前词库暂无错词。</p>
             </div>
           </section>
         </div>

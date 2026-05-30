@@ -10,6 +10,8 @@
   --success: #16803a;
   --danger: #c24132;
   --shadow: 0 18px 45px rgba(33, 50, 62, 0.12);
+  --sidebar-width: 280px;
+  --workspace-gap: 12px;
 }
 
 * {
@@ -40,21 +42,21 @@ textarea {
 
 .app {
   width: min(1240px, calc(100% - 32px));
-  height: 100vh;
+  height: 100dvh;
   margin: 0 auto;
-  padding: 18px 0 20px;
+  padding: 10px 0 12px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
 }
 
 .top {
   display: grid;
-  gap: 4px;
-  margin: 0 0 14px 304px;
+  gap: 2px;
+  margin: 0 0 8px calc(var(--sidebar-width) + var(--workspace-gap));
 }
 
 .eyebrow {
-  margin: 0 0 8px;
+  margin: 0 0 2px;
   color: var(--primary);
   font-size: 14px;
   font-weight: 700;
@@ -67,22 +69,22 @@ p {
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1.2;
 }
 
 h2 {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .scoreboard {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .scoreboard div {
   min-width: 92px;
-  padding: 12px 14px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.82);
@@ -91,24 +93,26 @@ h2 {
 
 .scoreboard span {
   display: block;
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 800;
   color: var(--primary-dark);
 }
 
 .scoreboard small {
   color: var(--muted);
+  font-size: 12px;
 }
 
 .intro {
   max-width: 720px;
   color: var(--muted);
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 .panel {
   margin-top: 0;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -123,10 +127,10 @@ h2 {
 
 .library-panel {
   position: fixed;
-  top: 18px;
-  bottom: 20px;
+  top: 10px;
+  bottom: 12px;
   left: max(16px, calc((100vw - 1240px) / 2 + 16px));
-  width: 280px;
+  width: var(--sidebar-width);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -134,25 +138,27 @@ h2 {
 
 .content-stack {
   height: 100%;
-  margin-left: 304px;
+  margin-left: calc(var(--sidebar-width) + var(--workspace-gap));
   display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(220px, 0.75fr);
-  gap: 16px;
+  grid-template-rows: minmax(230px, 44%) minmax(0, 1fr);
+  gap: var(--workspace-gap);
   overflow: hidden;
 }
 
 .top-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  gap: 16px;
+  gap: var(--workspace-gap);
   min-height: 0;
+  overflow: hidden;
 }
 
 .practice-workbench {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--workspace-gap);
   min-height: 0;
+  overflow: hidden;
 }
 
 .section-title {
@@ -160,7 +166,7 @@ h2 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .section-title p {
@@ -175,7 +181,7 @@ h2 {
 
 .step {
   display: inline-block;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   color: var(--accent);
   font-size: 13px;
   font-weight: 800;
@@ -183,9 +189,11 @@ h2 {
 
 textarea {
   width: 100%;
-  min-height: 118px;
+  height: clamp(82px, 13vh, 118px);
+  min-height: 82px;
+  max-height: 120px;
   resize: vertical;
-  padding: 14px 16px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--text);
@@ -196,7 +204,8 @@ textarea {
 
 .library-create {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .library-create label {
@@ -208,8 +217,8 @@ textarea {
 .library-list {
   display: grid;
   align-content: start;
-  gap: 8px;
-  margin: 18px 0 0;
+  gap: 6px;
+  margin: 12px 0 0;
   padding: 0;
   list-style: none;
   overflow: auto;
@@ -230,8 +239,8 @@ textarea {
 
 .library-item {
   display: grid;
-  gap: 6px;
-  padding: 8px;
+  gap: 5px;
+  padding: 7px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfd;
@@ -291,8 +300,8 @@ textarea {
 }
 
 .current-library-note {
-  margin-bottom: 10px;
-  padding: 10px 12px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfd;
@@ -312,13 +321,13 @@ input:focus {
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 button {
-  min-height: 42px;
-  padding: 0 18px;
+  min-height: 36px;
+  padding: 0 12px;
   border: 0;
   border-radius: 8px;
   cursor: pointer;
@@ -362,16 +371,16 @@ button:disabled {
 
 .message,
 .feedback {
-  min-height: 22px;
-  margin-top: 10px;
+  min-height: 20px;
+  margin-top: 7px;
   color: var(--muted);
   line-height: 1.5;
 }
 
 .practice-card {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 9px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfd;
@@ -381,7 +390,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
@@ -394,20 +403,58 @@ button:disabled {
   color: var(--primary-dark);
 }
 
+.round-result {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.round-result h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.round-result-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.round-result-grid div {
+  padding: 8px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  text-align: center;
+}
+
+.round-result-grid strong {
+  display: block;
+  color: var(--primary-dark);
+  font-size: 20px;
+}
+
+.round-result-grid small {
+  color: var(--muted);
+}
+
 .library-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-  padding: 12px;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 9px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f4faf9;
 }
 
 .library-summary strong {
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .inline-actions {
@@ -417,7 +464,7 @@ button:disabled {
 .meaning-box,
 .hint-box {
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 
 .meaning-box span,
@@ -429,13 +476,13 @@ label {
 }
 
 .meaning-box strong {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.35;
 }
 
 .hint-box strong {
   color: var(--accent);
-  font-size: 22px;
+  font-size: 20px;
   letter-spacing: 4px;
   word-break: break-word;
 }
@@ -448,8 +495,8 @@ label {
 
 input {
   width: 100%;
-  min-height: 42px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   outline: none;
@@ -472,7 +519,7 @@ input {
 .word-list {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -481,6 +528,7 @@ input {
 .word-list-shell {
   flex: 1;
   min-height: 0;
+  max-height: 100%;
   overflow: auto;
   padding-right: 2px;
 }
@@ -488,9 +536,9 @@ input {
 .word-item {
   display: grid;
   grid-template-columns: minmax(120px, 0.9fr) minmax(160px, 1.5fr) auto;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfd;
@@ -537,23 +585,186 @@ input {
 .stats-panel {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .input-panel textarea {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .practice-panel .practice-card {
   flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .stats-panel {
-  justify-content: space-between;
+  gap: 12px;
+  justify-content: flex-start;
 }
 
 .stats-panel .scoreboard {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wrong-book {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.wrong-book-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wrong-book-title h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.wrong-book-title span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wrong-book-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.wrong-book-item {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.wrong-book-item strong {
+  word-break: break-word;
+}
+
+.wrong-book-item span,
+.wrong-book-item small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.wrong-book-item small {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+@media (max-height: 760px) and (min-width: 761px) {
+  .app {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .top {
+    margin-bottom: 6px;
+  }
+
+  .intro {
+    display: none;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h2 {
+    font-size: 17px;
+  }
+
+  .panel {
+    padding: 10px;
+  }
+
+  .content-stack {
+    grid-template-rows: minmax(210px, 42%) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .top-workbench,
+  .practice-workbench {
+    gap: 10px;
+  }
+
+  .section-title {
+    margin-bottom: 6px;
+  }
+
+  .step {
+    margin-bottom: 2px;
+    font-size: 12px;
+  }
+
+  textarea {
+    height: clamp(72px, 11vh, 92px);
+    min-height: 72px;
+    padding: 8px 10px;
+  }
+
+  button,
+  input {
+    min-height: 34px;
+  }
+
+  .library-summary,
+  .current-library-note,
+  .practice-progress {
+    padding: 7px 9px;
+  }
+
+  .practice-card {
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .meaning-box strong,
+  .hint-box strong {
+    font-size: 18px;
+  }
+
+  .scoreboard div {
+    padding: 6px 7px;
+  }
+
+  .scoreboard span {
+    font-size: 19px;
+  }
+
+  .round-result {
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .round-result-grid div {
+    padding: 6px;
+  }
+
+  .round-result-grid strong {
+    font-size: 18px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -622,6 +833,7 @@ input {
   }
 
   .library-summary,
+  .round-result-grid,
   .answer-row,
   .word-item {
     grid-template-columns: 1fr;
