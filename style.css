@@ -228,13 +228,34 @@ textarea {
   text-align: left;
 }
 
+.library-item {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.library-item .library-switch {
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+}
+
+.library-item:hover,
 .library-switch:hover {
   background: #f4faf9;
 }
 
-.library-switch.active {
+.library-item.active {
   border-color: var(--primary);
   background: #e8f2f1;
+}
+
+.library-switch.active {
+  border: 0;
+  background: transparent;
   color: var(--primary-dark);
 }
 
@@ -245,6 +266,28 @@ textarea {
 .library-switch small {
   color: var(--muted);
   font-weight: 600;
+}
+
+.library-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.library-action-btn {
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.rename-library-btn {
+  color: var(--primary-dark);
+  background: #ffffff;
+}
+
+.delete-library-btn {
+  color: var(--danger);
+  background: #fdecea;
 }
 
 .current-library-note {

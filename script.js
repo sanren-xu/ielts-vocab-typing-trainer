@@ -223,10 +223,7 @@ function renderLibraryList() {
 
   libraries.forEach((library) => {
     const item = document.createElement("li");
-    const button = document.createElement("button");
-    button.className = library.id === currentLibraryId ? "library-switch active" : "library-switch";
-    button.type = "button";
-    button.addEventListener("click", () => switchLibrary(library.id));
+    item.className = library.id === currentLibraryId ? "library-item active" : "library-item";
 
     const name = document.createElement("span");
     name.textContent = library.name;
@@ -234,10 +231,103 @@ function renderLibraryList() {
     const count = document.createElement("small");
     count.textContent = `${library.words.length} 个单词`;
 
-    button.append(name, count);
-    item.appendChild(button);
+    const switchButton = document.createElement("button");
+    switchButton.className = library.id === currentLibraryId ? "library-switch active" : "library-switch";
+    switchButton.type = "button";
+    switchButton.addEventListener("click", () => switchLibrary(library.id));
+    switchButton.append(name, count);
+
+    const actions = document.createElement("div");
+    actions.className = "library-actions";
+
+    const renameButton = document.createElement("button");
+    renameButton.className = "library-action-btn rename-library-btn";
+    renameButton.type = "button";
+    renameButton.textContent = "重命名";
+    renameButton.addEventListener("click", () => renameLibrary(library.id));
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "library-action-btn delete-library-btn";
+    deleteButton.type = "button";
+    deleteButton.textContent = "删除";
+    deleteButton.disabled = libraries.length === 1;
+    deleteButton.addEventListener("click", () => deleteLibrary(library.id));
+
+    actions.append(renameButton, deleteButton);
+    item.append(switchButton, actions);
     libraryList.appendChild(item);
   });
+}
+
+function renameLibrary(libraryId) {
+  const library = libraries.find((item) => item.id === libraryId);
+
+  if (!library) {
+    return;
+  }
+
+  const newName = prompt("请输入新的词库名称：", library.name);
+
+  if (newName === null) {
+    return;
+  }
+
+  const cleanedName = newName.trim();
+
+  if (!cleanedName) {
+    alert("词库名称不能为空。");
+    return;
+  }
+
+  const duplicated = libraries.some((item) => item.id !== libraryId && item.name === cleanedName);
+
+  if (duplicated) {
+    alert("这个词库名称已经存在，请换一个名称。");
+    return;
+  }
+
+  library.name = cleanedName;
+  saveLibraries();
+  renderLibraryList();
+  renderCurrentLibrary();
+  showInputMessage(`词库已重命名为“${cleanedName}”。`, "success");
+}
+
+function deleteLibrary(libraryId) {
+  const library = libraries.find((item) => item.id === libraryId);
+
+  if (!library) {
+    return;
+  }
+
+  if (libraries.length === 1) {
+    alert("至少需要保留一个词库。");
+    return;
+  }
+
+  const confirmed = confirm(`确定要删除“${library.name}”吗？里面的单词也会一起删除。`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  const deletedCurrentLibrary = libraryId === currentLibraryId;
+  libraries = libraries.filter((item) => item.id !== libraryId);
+
+  if (deletedCurrentLibrary) {
+    currentLibraryId = libraries[0].id;
+    words = getCurrentWords();
+    saveCurrentLibraryId();
+    hidePracticeSection();
+    resetStats();
+  }
+
+  saveLibraries();
+  renderLibraryList();
+  renderCurrentLibrary();
+
+  const currentName = getCurrentLibrary().name;
+  showInputMessage(deletedCurrentLibrary ? `词库已删除，已切换到“${currentName}”。` : `已删除“${library.name}”。`, "success");
 }
 
 function renderCurrentLibrary() {
