@@ -4,6 +4,10 @@ const LEGACY_WORDS_STORAGE_KEY = "ieltsTypingLearnerWords";
 
 const libraryNameInput = document.querySelector("#libraryNameInput");
 const createLibraryBtn = document.querySelector("#createLibraryBtn");
+const exportCurrentBtn = document.querySelector("#exportCurrentBtn");
+const exportAllBtn = document.querySelector("#exportAllBtn");
+const importLibraryBtn = document.querySelector("#importLibraryBtn");
+const importFileInput = document.querySelector("#importFileInput");
 const libraryList = document.querySelector("#libraryList");
 const activeLibraryName = document.querySelector("#activeLibraryName");
 const activeLibraryNameForInput = document.querySelector("#activeLibraryNameForInput");
@@ -70,6 +74,10 @@ renderPracticeProgress();
 setPracticeEnabled(false);
 
 createLibraryBtn.addEventListener("click", createLibrary);
+exportCurrentBtn.addEventListener("click", exportCurrentLibrary);
+exportAllBtn.addEventListener("click", exportAllLibraries);
+importLibraryBtn.addEventListener("click", () => importFileInput.click());
+importFileInput.addEventListener("change", importLibrariesFromFile);
 
 libraryNameInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -362,6 +370,77 @@ function deleteLibrary(libraryId) {
 
   const currentName = getCurrentLibrary().name;
   showInputMessage(deletedCurrentLibrary ? `词库已删除，已切换到“${currentName}”。` : `已删除“${library.name}”。`, "success");
+}
+
+function exportCurrentLibrary() {
+  const currentLibrary = getCurrentLibrary();
+  const exportData = normalizeLibrary(currentLibrary);
+  downloadJson(exportData, `${safeFileName(currentLibrary.name)}.json`);
+  showInputMessage(`已导出“${currentLibrary.name}”。`, "success");
+}
+
+function exportAllLibraries() {
+  const exportData = {
+    app: "ielts-typing-learner",
+    version: 1,
+    libraries: libraries.map(normalizeLibrary)
+  };
+
+  downloadJson(exportData, "ielts-typing-learner-libraries.json");
+  showInputMessage("已导出全部词库。", "success");
+}
+
+function importLibrariesFromFile(event) {
+  const file = event.target.files[0];
+  event.target.value = "";
+
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.addEventListener("load", () => {
+    try {
+      const parsedData = JSON.parse(reader.result);
+      const importedLibraries = parseImportedLibraries(parsedData);
+
+      if (importedLibraries.length === 0) {
+        throw new Error("没有可导入的词库。");
+      }
+
+      const existingNames = new Set(libraries.map((library) => library.name));
+      const normalizedLibraries = importedLibraries.map((library) => {
+        const uniqueName = createCopyName(library.name, existingNames);
+        existingNames.add(uniqueName);
+
+        return {
+          ...library,
+          id: createLibraryId(),
+          name: uniqueName
+        };
+      });
+
+      libraries.push(...normalizedLibraries);
+      currentLibraryId = normalizedLibraries[normalizedLibraries.length - 1].id;
+      words = getCurrentWords();
+      saveLibraries();
+      saveCurrentLibraryId();
+      hidePracticeSection();
+      resetStats();
+      renderLibraryList();
+      renderCurrentLibrary();
+      showInputMessage(`已导入 ${normalizedLibraries.length} 个词库。`, "success");
+    } catch {
+      showInputMessage("导入失败：JSON 格式不正确或词库数据无效。", "error");
+    }
+  });
+
+  reader.addEventListener("error", () => {
+    showInputMessage("导入失败：无法读取文件。", "error");
+  });
+
+  reader.readAsText(file);
 }
 
 function renderCurrentLibrary() {
@@ -997,6 +1076,65 @@ function normalizeLibrary(library) {
   };
 }
 
+function parseImportedLibraries(data) {
+  if (!data || typeof data !== "object") {
+    throw new Error("JSON 根数据必须是对象或数组。");
+  }
+
+  const rawLibraries = Array.isArray(data) ? data : Array.isArray(data.libraries) ? data.libraries : [data];
+
+  return rawLibraries.map(validateImportedLibrary);
+}
+
+function validateImportedLibrary(library) {
+  if (!library || typeof library !== "object" || Array.isArray(library)) {
+    throw new Error("词库必须是对象。");
+  }
+
+  const name = typeof library.name === "string" ? library.name.trim() : "";
+
+  if (!name || !Array.isArray(library.words)) {
+    throw new Error("词库缺少名称或单词列表。");
+  }
+
+  return {
+    id: createLibraryId(),
+    name,
+    words: library.words.map(validateImportedWord),
+    wrongWords: Array.isArray(library.wrongWords) ? library.wrongWords.map(validateImportedWrongWord) : []
+  };
+}
+
+function validateImportedWord(word) {
+  if (!word || typeof word !== "object" || Array.isArray(word)) {
+    throw new Error("单词必须是对象。");
+  }
+
+  const english = typeof word.english === "string" ? word.english.trim().toLowerCase() : "";
+  const chinese = typeof word.chinese === "string" ? word.chinese.trim() : "";
+
+  if (!english || !chinese) {
+    throw new Error("单词缺少英文或中文意思。");
+  }
+
+  return {
+    english,
+    chinese
+  };
+}
+
+function validateImportedWrongWord(word) {
+  const normalizedWord = normalizeWrongWord(validateImportedWord(word));
+  const wrongCount = Number(word.wrongCount);
+  const correctStreak = Number(word.correctStreak);
+
+  return {
+    ...normalizedWord,
+    wrongCount: Number.isFinite(wrongCount) && wrongCount > 0 ? wrongCount : 1,
+    correctStreak: Number.isFinite(correctStreak) && correctStreak > 0 ? correctStreak : 0
+  };
+}
+
 function normalizeWrongWord(word = {}) {
   const safeWord = word || {};
 
@@ -1010,4 +1148,34 @@ function normalizeWrongWord(word = {}) {
 
 function createLibraryId() {
   return `library-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createCopyName(baseName, existingNames = new Set(libraries.map((library) => library.name))) {
+  let candidateName = existingNames.has(baseName) ? `${baseName} 副本` : baseName;
+  let copyIndex = 2;
+
+  while (existingNames.has(candidateName)) {
+    candidateName = `${baseName} 副本 ${copyIndex}`;
+    copyIndex += 1;
+  }
+
+  return candidateName;
+}
+
+function downloadJson(data, fileName) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function safeFileName(name) {
+  return name.replace(/[\\/:*?"<>|]/g, "_").trim() || "ielts-library";
 }

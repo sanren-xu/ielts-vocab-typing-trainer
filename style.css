@@ -212,6 +212,20 @@ textarea {
   flex: 0 0 auto;
 }
 
+.library-transfer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.library-transfer button {
+  min-height: 34px;
+}
+
 .library-create label {
   color: var(--muted);
   font-size: 14px;

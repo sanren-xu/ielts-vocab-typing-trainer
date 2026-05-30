@@ -29,6 +29,13 @@
           <button id="createLibraryBtn" class="primary-btn">创建词库</button>
         </div>
 
+        <div class="library-transfer">
+          <button id="exportCurrentBtn" class="ghost-btn" type="button">导出当前词库</button>
+          <button id="exportAllBtn" class="ghost-btn" type="button">导出全部词库</button>
+          <button id="importLibraryBtn" class="ghost-btn" type="button">导入词库</button>
+          <input id="importFileInput" type="file" accept="application/json,.json" hidden>
+        </div>
+
         <ul id="libraryList" class="library-list"></ul>
       </aside>
 
