@@ -1,4 +1,12 @@
-const STORAGE_KEY = "ieltsTypingLearnerWords";
+const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
+const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
+const LEGACY_WORDS_STORAGE_KEY = "ieltsTypingLearnerWords";
+
+const libraryNameInput = document.querySelector("#libraryNameInput");
+const createLibraryBtn = document.querySelector("#createLibraryBtn");
+const libraryList = document.querySelector("#libraryList");
+const activeLibraryName = document.querySelector("#activeLibraryName");
+const activeLibraryNameForInput = document.querySelector("#activeLibraryNameForInput");
 
 const wordInput = document.querySelector("#wordInput");
 const generateBtn = document.querySelector("#generateBtn");
@@ -21,7 +29,9 @@ const correctCount = document.querySelector("#correctCount");
 const wrongCount = document.querySelector("#wrongCount");
 const doneCount = document.querySelector("#doneCount");
 
-let words = loadWords();
+let libraries = loadLibraries();
+let currentLibraryId = loadCurrentLibraryId();
+let words = getCurrentWords();
 let currentWord = null;
 let stats = {
   correct: 0,
@@ -29,9 +39,18 @@ let stats = {
   done: 0
 };
 
-renderWordList();
+renderLibraryList();
+renderCurrentLibrary();
 renderStats();
 setPracticeEnabled(false);
+
+createLibraryBtn.addEventListener("click", createLibrary);
+
+libraryNameInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    createLibrary();
+  }
+});
 
 generateBtn.addEventListener("click", () => {
   const parsedWords = parseWords(wordInput.value);
@@ -42,9 +61,10 @@ generateBtn.addEventListener("click", () => {
   }
 
   words = mergeWords(words, parsedWords);
-  saveWords();
-  renderWordList();
-  showInputMessage(`已生成词库，共 ${words.length} 个单词。`, "success");
+  saveCurrentWords(words);
+  renderCurrentLibrary();
+  renderLibraryList();
+  showInputMessage(`已添加到“${getCurrentLibrary().name}”，当前共有 ${words.length} 个单词。`, "success");
 });
 
 clearInputBtn.addEventListener("click", () => {
@@ -59,7 +79,7 @@ clearLibraryBtn.addEventListener("click", () => {
     return;
   }
 
-  const confirmed = confirm("确定要清空整个词库吗？这个操作不能撤销。");
+  const confirmed = confirm(`确定要清空“${getCurrentLibrary().name}”里的所有单词吗？这个操作不能撤销。`);
 
   if (!confirmed) {
     return;
@@ -67,15 +87,16 @@ clearLibraryBtn.addEventListener("click", () => {
 
   words = [];
   currentWord = null;
-  saveWords();
-  renderWordList();
+  saveCurrentWords(words);
+  renderCurrentLibrary();
+  renderLibraryList();
   hidePracticeSection();
-  showInputMessage("词库已清空。");
+  showInputMessage("当前词库已清空。");
 });
 
 startBtn.addEventListener("click", () => {
   if (words.length === 0) {
-    showInputMessage("请先生成词库，再开始练习。", "error");
+    showInputMessage("请先给当前词库添加单词，再开始练习。", "error");
     return;
   }
 
@@ -97,15 +118,61 @@ answerInput.addEventListener("keydown", (event) => {
 });
 
 resetStatsBtn.addEventListener("click", () => {
-  stats = {
-    correct: 0,
-    wrong: 0,
-    done: 0
-  };
-  renderStats();
+  resetStats();
   feedbackText.textContent = "统计已重置，可以继续练习。";
   feedbackText.className = "feedback";
 });
+
+function createLibrary() {
+  const name = libraryNameInput.value.trim();
+
+  if (!name) {
+    showInputMessage("请先输入词库名称。", "error");
+    libraryNameInput.focus();
+    return;
+  }
+
+  const duplicated = libraries.some((library) => library.name === name);
+
+  if (duplicated) {
+    showInputMessage("这个词库名称已经存在，请换一个名称。", "error");
+    libraryNameInput.focus();
+    return;
+  }
+
+  const newLibrary = {
+    id: createLibraryId(),
+    name,
+    words: []
+  };
+
+  libraries.push(newLibrary);
+  currentLibraryId = newLibrary.id;
+  words = newLibrary.words;
+  libraryNameInput.value = "";
+  saveLibraries();
+  saveCurrentLibraryId();
+  hidePracticeSection();
+  resetStats();
+  renderLibraryList();
+  renderCurrentLibrary();
+  showInputMessage(`已创建并切换到“${name}”。`, "success");
+}
+
+function switchLibrary(libraryId) {
+  if (currentLibraryId === libraryId) {
+    return;
+  }
+
+  currentLibraryId = libraryId;
+  words = getCurrentWords();
+  saveCurrentLibraryId();
+  hidePracticeSection();
+  resetStats();
+  renderLibraryList();
+  renderCurrentLibrary();
+  showInputMessage(`已切换到“${getCurrentLibrary().name}”。`);
+}
 
 function parseWords(text) {
   return text
@@ -142,6 +209,36 @@ function mergeWords(oldWords, newWords) {
   newWords.forEach((item) => wordMap.set(item.english, item));
 
   return Array.from(wordMap.values()).sort((a, b) => a.english.localeCompare(b.english));
+}
+
+function renderLibraryList() {
+  libraryList.innerHTML = "";
+
+  libraries.forEach((library) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.className = library.id === currentLibraryId ? "library-switch active" : "library-switch";
+    button.type = "button";
+    button.addEventListener("click", () => switchLibrary(library.id));
+
+    const name = document.createElement("span");
+    name.textContent = library.name;
+
+    const count = document.createElement("small");
+    count.textContent = `${library.words.length} 个单词`;
+
+    button.append(name, count);
+    item.appendChild(button);
+    libraryList.appendChild(item);
+  });
+}
+
+function renderCurrentLibrary() {
+  const currentLibrary = getCurrentLibrary();
+  words = currentLibrary.words;
+  activeLibraryName.textContent = currentLibrary.name;
+  activeLibraryNameForInput.textContent = currentLibrary.name;
+  renderWordList();
 }
 
 function renderWordList() {
@@ -213,7 +310,7 @@ function editWord(oldEnglish) {
     return;
   }
 
-  // 编辑时也保持英文单词不重复。
+  // 编辑时只在当前词库内去重，不影响其他词库。
   words = words.filter((word) => word.english !== oldEnglish && word.english !== cleanedEnglish);
   words.push({
     english: cleanedEnglish,
@@ -230,14 +327,16 @@ function editWord(oldEnglish) {
     hintText.textContent = createHint(currentWord.english);
   }
 
-  saveWords();
-  renderWordList();
+  saveCurrentWords(words);
+  renderCurrentLibrary();
+  renderLibraryList();
 }
 
 function deleteWord(english) {
   words = words.filter((word) => word.english !== english);
-  saveWords();
-  renderWordList();
+  saveCurrentWords(words);
+  renderCurrentLibrary();
+  renderLibraryList();
 
   if (words.length === 0) {
     hidePracticeSection();
@@ -320,6 +419,15 @@ function checkAnswer() {
   answerInput.select();
 }
 
+function resetStats() {
+  stats = {
+    correct: 0,
+    wrong: 0,
+    done: 0
+  };
+  renderStats();
+}
+
 function renderStats() {
   correctCount.textContent = stats.correct;
   wrongCount.textContent = stats.wrong;
@@ -336,12 +444,80 @@ function showInputMessage(text, type) {
   inputMessage.style.color = type === "error" ? "var(--danger)" : type === "success" ? "var(--success)" : "var(--muted)";
 }
 
-function saveWords() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+function getCurrentLibrary() {
+  const matchedLibrary = libraries.find((library) => library.id === currentLibraryId);
+
+  if (matchedLibrary) {
+    return matchedLibrary;
+  }
+
+  currentLibraryId = libraries[0].id;
+  saveCurrentLibraryId();
+  return libraries[0];
 }
 
-function loadWords() {
-  const savedWords = localStorage.getItem(STORAGE_KEY);
+function getCurrentWords() {
+  return getCurrentLibrary().words;
+}
+
+function saveCurrentWords(newWords) {
+  const currentLibrary = getCurrentLibrary();
+  currentLibrary.words = newWords;
+  words = currentLibrary.words;
+  saveLibraries();
+}
+
+function saveLibraries() {
+  localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+}
+
+function saveCurrentLibraryId() {
+  localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
+}
+
+function loadCurrentLibraryId() {
+  const savedId = localStorage.getItem(CURRENT_LIBRARY_ID_KEY);
+  const matchedLibrary = libraries.find((library) => library.id === savedId);
+
+  if (matchedLibrary) {
+    return matchedLibrary.id;
+  }
+
+  return libraries[0].id;
+}
+
+function loadLibraries() {
+  const savedLibraries = localStorage.getItem(LIBRARIES_STORAGE_KEY);
+
+  if (savedLibraries) {
+    try {
+      const parsedLibraries = JSON.parse(savedLibraries);
+
+      if (Array.isArray(parsedLibraries) && parsedLibraries.length > 0) {
+        return parsedLibraries.map(normalizeLibrary);
+      }
+    } catch {
+      return createDefaultLibraries();
+    }
+  }
+
+  return createDefaultLibraries();
+}
+
+function createDefaultLibraries() {
+  const legacyWords = loadLegacyWords();
+  const defaultLibrary = {
+    id: createLibraryId(),
+    name: "默认词库",
+    words: legacyWords
+  };
+
+  localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify([defaultLibrary]));
+  return [defaultLibrary];
+}
+
+function loadLegacyWords() {
+  const savedWords = localStorage.getItem(LEGACY_WORDS_STORAGE_KEY);
 
   if (!savedWords) {
     return [];
@@ -353,4 +529,16 @@ function loadWords() {
   } catch {
     return [];
   }
+}
+
+function normalizeLibrary(library) {
+  return {
+    id: library.id || createLibraryId(),
+    name: library.name || "未命名词库",
+    words: Array.isArray(library.words) ? library.words : []
+  };
+}
+
+function createLibraryId() {
+  return `library-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }

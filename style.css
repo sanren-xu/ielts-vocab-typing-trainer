@@ -107,6 +107,23 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.workspace {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.library-panel {
+  position: sticky;
+  top: 18px;
+}
+
+.content-stack .panel:first-child,
+.library-panel {
+  margin-top: 0;
+}
+
 .section-title {
   display: flex;
   align-items: flex-start;
@@ -119,6 +136,10 @@ h2 {
   max-width: 470px;
   color: var(--muted);
   line-height: 1.6;
+}
+
+.compact-title {
+  display: block;
 }
 
 .step {
@@ -140,6 +161,69 @@ textarea {
   background: #fbfcfd;
   line-height: 1.7;
   outline: none;
+}
+
+.library-create {
+  display: grid;
+  gap: 10px;
+}
+
+.library-create label {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.library-list {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library-switch {
+  display: grid;
+  width: 100%;
+  min-height: auto;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #fbfcfd;
+  color: var(--text);
+  text-align: left;
+}
+
+.library-switch:hover {
+  background: #f4faf9;
+}
+
+.library-switch.active {
+  border-color: var(--primary);
+  background: #e8f2f1;
+  color: var(--primary-dark);
+}
+
+.library-switch span {
+  overflow-wrap: anywhere;
+}
+
+.library-switch small {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.current-library-note {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  color: var(--muted);
+}
+
+.current-library-note strong {
+  color: var(--primary-dark);
 }
 
 textarea:focus,
@@ -349,6 +433,14 @@ input {
   .app {
     width: min(100% - 20px, 1120px);
     padding-top: 20px;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .library-panel {
+    position: static;
   }
 
   .section-title {
