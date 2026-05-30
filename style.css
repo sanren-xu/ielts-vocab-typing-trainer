@@ -16,9 +16,14 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  overflow: hidden;
   font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
   color: var(--text);
   background:
@@ -34,15 +39,18 @@ textarea {
 }
 
 .app {
-  width: min(1120px, calc(100% - 32px));
+  width: min(1240px, calc(100% - 32px));
+  height: 100vh;
   margin: 0 auto;
-  padding: 34px 0 48px;
+  padding: 18px 0 20px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .top {
   display: grid;
-  gap: 8px;
-  margin-bottom: 22px;
+  gap: 4px;
+  margin: 0 0 14px 304px;
 }
 
 .eyebrow {
@@ -59,7 +67,7 @@ p {
 }
 
 h1 {
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1.2;
 }
 
@@ -95,33 +103,56 @@ h2 {
 .intro {
   max-width: 720px;
   color: var(--muted);
-  line-height: 1.7;
+  line-height: 1.5;
 }
 
 .panel {
-  margin-top: 18px;
-  padding: 22px;
+  margin-top: 0;
+  padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
   box-shadow: var(--shadow);
+  min-height: 0;
 }
 
-.workspace {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
+.workspace,
+.content-stack {
+  min-height: 0;
 }
 
 .library-panel {
-  position: sticky;
+  position: fixed;
   top: 18px;
+  bottom: 20px;
+  left: max(16px, calc((100vw - 1240px) / 2 + 16px));
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.content-stack .panel:first-child,
-.library-panel {
-  margin-top: 0;
+.content-stack {
+  height: 100%;
+  margin-left: 304px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(220px, 0.75fr);
+  gap: 16px;
+  overflow: hidden;
+}
+
+.top-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 16px;
+  min-height: 0;
+}
+
+.practice-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 16px;
+  min-height: 0;
 }
 
 .section-title {
@@ -129,7 +160,7 @@ h2 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .section-title p {
@@ -152,7 +183,7 @@ h2 {
 
 textarea {
   width: 100%;
-  min-height: 150px;
+  min-height: 118px;
   resize: vertical;
   padding: 14px 16px;
   border: 1px solid var(--line);
@@ -176,10 +207,13 @@ textarea {
 
 .library-list {
   display: grid;
+  align-content: start;
   gap: 8px;
   margin: 18px 0 0;
   padding: 0;
   list-style: none;
+  overflow: auto;
+  min-height: 0;
 }
 
 .library-switch {
@@ -214,7 +248,7 @@ textarea {
 }
 
 .current-library-note {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -236,7 +270,7 @@ input:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 button {
@@ -285,16 +319,16 @@ button:disabled {
 
 .message,
 .feedback {
-  min-height: 24px;
-  margin-top: 12px;
+  min-height: 22px;
+  margin-top: 10px;
   color: var(--muted);
   line-height: 1.5;
 }
 
 .practice-card {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 12px;
+  padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfd;
@@ -305,8 +339,8 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
+  margin-bottom: 12px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f4faf9;
@@ -335,13 +369,13 @@ label {
 }
 
 .meaning-box strong {
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.35;
 }
 
 .hint-box strong {
   color: var(--accent);
-  font-size: 24px;
+  font-size: 22px;
   letter-spacing: 4px;
   word-break: break-word;
 }
@@ -362,7 +396,7 @@ input {
 }
 
 .scoreboard {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .feedback.correct {
@@ -377,18 +411,26 @@ input {
 
 .word-list {
   display: grid;
-  gap: 10px;
+  align-content: start;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.word-list-shell {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
 .word-item {
   display: grid;
   grid-template-columns: minmax(120px, 0.9fr) minmax(160px, 1.5fr) auto;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfd;
@@ -429,18 +471,67 @@ input {
   line-height: 1.7;
 }
 
+.input-panel,
+.list-panel,
+.practice-panel,
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-panel textarea {
+  flex: 1;
+}
+
+.practice-panel .practice-card {
+  flex: 1;
+}
+
+.stats-panel {
+  justify-content: space-between;
+}
+
+.stats-panel .scoreboard {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 760px) {
-  .app {
-    width: min(100% - 20px, 1120px);
-    padding-top: 20px;
+  body {
+    overflow: auto;
   }
 
-  .workspace {
+  .app {
+    width: min(100% - 20px, 1120px);
+    height: auto;
+    min-height: 100vh;
+    padding-top: 20px;
+    display: block;
+  }
+
+  .top {
+    margin-left: 0;
+    margin-bottom: 16px;
+  }
+
+  .content-stack,
+  .top-workbench,
+  .practice-workbench {
+    height: auto;
+    margin-left: 0;
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
 
   .library-panel {
     position: static;
+    width: auto;
+    overflow: visible;
+    margin-bottom: 16px;
+  }
+
+  .library-list {
+    max-height: 260px;
   }
 
   .section-title {
@@ -454,6 +545,10 @@ input {
   .scoreboard {
     width: 100%;
     display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stats-panel .scoreboard {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
@@ -474,6 +569,10 @@ input {
 
   .library-summary {
     display: grid;
+  }
+
+  .word-list-shell {
+    max-height: 320px;
   }
 
   .word-actions {
