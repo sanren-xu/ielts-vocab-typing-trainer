@@ -28,11 +28,16 @@ const feedbackText = document.querySelector("#feedbackText");
 const correctCount = document.querySelector("#correctCount");
 const wrongCount = document.querySelector("#wrongCount");
 const doneCount = document.querySelector("#doneCount");
+const roundCount = document.querySelector("#roundCount");
+const progressCount = document.querySelector("#progressCount");
 
 let libraries = loadLibraries();
 let currentLibraryId = loadCurrentLibraryId();
 let words = getCurrentWords();
 let currentWord = null;
+let practiceQueue = [];
+let practiceIndex = 0;
+let currentRound = 0;
 let stats = {
   correct: 0,
   wrong: 0,
@@ -42,6 +47,7 @@ let stats = {
 renderLibraryList();
 renderCurrentLibrary();
 renderStats();
+renderPracticeProgress();
 setPracticeEnabled(false);
 
 createLibraryBtn.addEventListener("click", createLibrary);
@@ -102,6 +108,7 @@ startBtn.addEventListener("click", () => {
 
   practiceSection.hidden = false;
   setPracticeEnabled(true);
+  startPracticeQueue();
   pickNextWord();
   practiceSection.scrollIntoView({
     behavior: "smooth",
@@ -327,13 +334,21 @@ function editWord(oldEnglish) {
     hintText.textContent = createHint(currentWord.english);
   }
 
+  updatePracticeQueueWord(oldEnglish, {
+    english: cleanedEnglish,
+    chinese: cleanedChinese
+  });
+
   saveCurrentWords(words);
   renderCurrentLibrary();
   renderLibraryList();
 }
 
 function deleteWord(english) {
+  const deletedCurrentWord = currentWord && currentWord.english === english;
+
   words = words.filter((word) => word.english !== english);
+  removeWordFromPracticeQueue(english);
   saveCurrentWords(words);
   renderCurrentLibrary();
   renderLibraryList();
@@ -342,7 +357,7 @@ function deleteWord(english) {
     hidePracticeSection();
   }
 
-  if (currentWord && currentWord.english === english) {
+  if (deletedCurrentWord) {
     currentWord = null;
     if (words.length > 0 && !practiceSection.hidden) {
       pickNextWord();
@@ -354,6 +369,7 @@ function hidePracticeSection() {
   practiceSection.hidden = true;
   setPracticeEnabled(false);
   currentWord = null;
+  resetPracticeQueue();
   answerInput.value = "";
   meaningText.textContent = "请先点击开始练习";
   hintText.textContent = "_";
@@ -361,14 +377,79 @@ function hidePracticeSection() {
   feedbackText.className = "feedback";
 }
 
+function startPracticeQueue() {
+  practiceQueue = shuffleWords(words);
+  practiceIndex = 0;
+  currentRound = 1;
+  renderPracticeProgress();
+}
+
 function pickNextWord() {
-  currentWord = words[Math.floor(Math.random() * words.length)];
+  if (words.length === 0) {
+    hidePracticeSection();
+    return;
+  }
+
+  if (practiceQueue.length === 0 || practiceIndex >= practiceQueue.length) {
+    practiceQueue = shuffleWords(words);
+    practiceIndex = 0;
+    currentRound += 1;
+  }
+
+  currentWord = practiceQueue[practiceIndex];
+  practiceIndex += 1;
   answerInput.value = "";
   meaningText.textContent = currentWord.chinese;
   hintText.textContent = createHint(currentWord.english);
   feedbackText.textContent = "请输入这个单词的完整英文拼写。";
   feedbackText.className = "feedback";
+  renderPracticeProgress();
   answerInput.focus();
+}
+
+function shuffleWords(sourceWords) {
+  const shuffledWords = sourceWords.map((word) => ({ ...word }));
+
+  // Fisher-Yates 洗牌：每一轮先打乱，再按顺序出题。
+  for (let index = shuffledWords.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledWords[index], shuffledWords[randomIndex]] = [shuffledWords[randomIndex], shuffledWords[index]];
+  }
+
+  return shuffledWords;
+}
+
+function resetPracticeQueue() {
+  practiceQueue = [];
+  practiceIndex = 0;
+  currentRound = 0;
+  renderPracticeProgress();
+}
+
+function renderPracticeProgress() {
+  roundCount.textContent = currentRound;
+  progressCount.textContent = `${currentWord ? practiceIndex : 0} / ${practiceQueue.length}`;
+}
+
+function updatePracticeQueueWord(oldEnglish, updatedWord) {
+  practiceQueue = practiceQueue.map((word) => {
+    if (word.english !== oldEnglish) {
+      return word;
+    }
+
+    return { ...updatedWord };
+  });
+  renderPracticeProgress();
+}
+
+function removeWordFromPracticeQueue(english) {
+  const removedBeforeCurrentIndex = practiceQueue
+    .slice(0, practiceIndex)
+    .filter((word) => word.english === english).length;
+
+  practiceQueue = practiceQueue.filter((word) => word.english !== english);
+  practiceIndex = Math.max(0, practiceIndex - removedBeforeCurrentIndex);
+  renderPracticeProgress();
 }
 
 function createHint(word) {

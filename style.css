@@ -334,6 +334,23 @@ button:disabled {
   background: #fbfcfd;
 }
 
+.practice-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.practice-progress strong {
+  color: var(--primary-dark);
+}
+
 .library-summary {
   display: flex;
   align-items: center;
