@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雅思自定义生词拼写练习器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <p class="eyebrow">自定义词库练习</p>
+      <h1>雅思自定义生词拼写练习器</h1>
+      <p class="intro">录入今天学到的生词，保存成自己的词库，再用中文意思反向练习英文拼写。</p>
+    </header>
+
+    <section class="panel input-panel">
+      <div class="section-title">
+        <div>
+          <span class="step">第一区</span>
+          <h2>录入今日生词</h2>
+        </div>
+        <p>每行一个单词，格式为“英文单词 - 中文意思”。</p>
+      </div>
+
+      <textarea id="wordInput" spellcheck="false" placeholder="evidence - 证据；根据
+sustainable - 可持续的
+estimate - 估计"></textarea>
+
+      <div class="actions">
+        <button id="generateBtn" class="primary-btn">生成词库</button>
+        <button id="clearInputBtn" class="ghost-btn">清空输入</button>
+      </div>
+      <p id="inputMessage" class="message"></p>
+    </section>
+
+    <section class="panel list-panel">
+      <div class="section-title">
+        <div>
+          <span class="step">第二区</span>
+          <h2>当前词库</h2>
+        </div>
+        <p>词库会自动保存到本机浏览器。确认词库后，再开始练习。</p>
+      </div>
+
+      <div class="library-summary">
+        <strong>当前共有 <span id="totalCount">0</span> 个单词</strong>
+        <div class="actions inline-actions">
+          <button id="startBtn" class="primary-btn">开始练习</button>
+          <button id="clearLibraryBtn" class="danger-btn">清空词库</button>
+        </div>
+      </div>
+
+      <ul id="wordList" class="word-list"></ul>
+      <p id="emptyText" class="empty">还没有单词。先把今天学到的生词放进来吧。</p>
+    </section>
+
+    <section id="practiceSection" class="panel practice-panel" hidden>
+      <div class="section-title">
+        <div>
+          <span class="step">第三区</span>
+          <h2>拼写练习</h2>
+        </div>
+        <p>根据中文意思和首字母提示，输入完整英文拼写。</p>
+      </div>
+
+      <div class="practice-card">
+        <div class="meaning-box">
+          <span>中文意思</span>
+          <strong id="meaningText">请先点击开始练习</strong>
+        </div>
+        <div class="hint-box">
+          <span>首字母提示</span>
+          <strong id="hintText">_</strong>
+        </div>
+
+        <label for="answerInput">你的拼写</label>
+        <div class="answer-row">
+          <input id="answerInput" type="text" autocomplete="off" placeholder="输入英文单词">
+          <button id="submitBtn" class="primary-btn">提交</button>
+        </div>
+
+        <p id="feedbackText" class="feedback">请输入这个单词的完整英文拼写。</p>
+      </div>
+    </section>
+
+    <section class="panel stats-panel">
+      <div class="section-title">
+        <div>
+          <span class="step">第四区</span>
+          <h2>练习统计</h2>
+        </div>
+        <p>统计只记录本次打开页面后的练习情况，重置后会全部归零。</p>
+      </div>
+
+      <div class="scoreboard">
+        <div><span id="correctCount">0</span><small>正确</small></div>
+        <div><span id="wrongCount">0</span><small>错误</small></div>
+        <div><span id="doneCount">0</span><small>已练习</small></div>
+      </div>
+
+      <div class="actions">
+        <button id="resetStatsBtn" class="ghost-btn">重置统计</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

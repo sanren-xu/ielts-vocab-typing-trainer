@@ -1,0 +1,399 @@
+:root {
+  --bg: #f4f7f9;
+  --panel: #ffffff;
+  --text: #1e2a32;
+  --muted: #65737d;
+  --line: #dce5ea;
+  --primary: #16716d;
+  --primary-dark: #0f5552;
+  --accent: #d97706;
+  --success: #16803a;
+  --danger: #c24132;
+  --shadow: 0 18px 45px rgba(33, 50, 62, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  color: var(--text);
+  background:
+    linear-gradient(135deg, rgba(22, 113, 109, 0.08), transparent 36%),
+    linear-gradient(315deg, rgba(217, 119, 6, 0.08), transparent 30%),
+    var(--bg);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.app {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 34px 0 48px;
+}
+
+.top {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+.scoreboard {
+  display: flex;
+  gap: 10px;
+}
+
+.scoreboard div {
+  min-width: 92px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  text-align: center;
+}
+
+.scoreboard span {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+.scoreboard small {
+  color: var(--muted);
+}
+
+.intro {
+  max-width: 720px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.panel {
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.section-title p {
+  max-width: 470px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.step {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+textarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: #fbfcfd;
+  line-height: 1.7;
+  outline: none;
+}
+
+textarea:focus,
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(22, 113, 109, 0.12);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.primary-btn {
+  color: #ffffff;
+  background: var(--primary);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.ghost-btn {
+  color: var(--primary-dark);
+  background: #e8f2f1;
+}
+
+.danger-btn {
+  color: var(--danger);
+  background: #fdecea;
+}
+
+.danger-btn:hover:not(:disabled),
+.delete-btn:hover:not(:disabled) {
+  background: #fbd7d2;
+}
+
+.message,
+.feedback {
+  min-height: 24px;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.practice-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.library-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f4faf9;
+}
+
+.library-summary strong {
+  font-size: 17px;
+}
+
+.inline-actions {
+  margin-top: 0;
+}
+
+.meaning-box,
+.hint-box {
+  display: grid;
+  gap: 8px;
+}
+
+.meaning-box span,
+.hint-box span,
+label {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.meaning-box strong {
+  font-size: 24px;
+  line-height: 1.35;
+}
+
+.hint-box strong {
+  color: var(--accent);
+  font-size: 24px;
+  letter-spacing: 4px;
+  word-break: break-word;
+}
+
+.answer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+}
+
+.scoreboard {
+  margin-top: 14px;
+}
+
+.feedback.correct {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.feedback.wrong {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.word-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.word-item {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(160px, 1.5fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.word-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.word-item strong {
+  word-break: break-word;
+}
+
+.word-item span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.edit-btn,
+.delete-btn {
+  min-width: 74px;
+}
+
+.edit-btn {
+  color: var(--primary-dark);
+  background: #e8f2f1;
+}
+
+.delete-btn {
+  color: var(--danger);
+  background: #fdecea;
+}
+
+.empty {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+@media (max-width: 760px) {
+  .app {
+    width: min(100% - 20px, 1120px);
+    padding-top: 20px;
+  }
+
+  .section-title {
+    display: grid;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  .scoreboard {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .scoreboard div {
+    min-width: 0;
+    padding: 10px 8px;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .library-summary,
+  .answer-row,
+  .word-item {
+    grid-template-columns: 1fr;
+  }
+
+  .library-summary {
+    display: grid;
+  }
+
+  .word-actions {
+    justify-content: stretch;
+  }
+
+  .word-actions button {
+    flex: 1;
+  }
+
+  .answer-row button,
+  .actions button {
+    width: 100%;
+  }
+}
