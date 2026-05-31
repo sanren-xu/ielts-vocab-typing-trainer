@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拼写练习 - IELTS Typing Learner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page practice-page">
+  <main class="practice-shell">
+    <header class="practice-topbar">
+      <a class="practice-back-btn" href="app.html" aria-label="返回词库">
+        <span aria-hidden="true">←</span>
+        返回
+      </a>
+
+      <div class="practice-library-title">
+        <span aria-hidden="true">▣</span>
+        <strong>词库名：<span id="practiceLibraryName">未选择词库</span></strong>
+      </div>
+
+      <div class="practice-progress-label">
+        进度：<strong id="practiceProgress">0</strong>
+      </div>
+    </header>
+
+    <section class="practice-page-heading" aria-labelledby="practiceTitle">
+      <h1 id="practiceTitle">拼写练习</h1>
+    </section>
+
+    <section class="practice-main-card" aria-label="拼写练习">
+      <div class="practice-left-pane">
+        <div class="practice-pane-title">
+          <span aria-hidden="true">□</span>
+          <h2>汉语释义</h2>
+        </div>
+
+        <p id="practiceMeaning" class="practice-meaning">正在读取当前词库...</p>
+
+        <div class="practice-divider"></div>
+
+        <div class="practice-hint-row">
+          <span class="practice-hint-icon" aria-hidden="true">◌</span>
+          <span>首字母提示：</span>
+          <strong id="practiceHint">_</strong>
+        </div>
+
+        <input id="practiceAnswer" class="practice-answer-input" type="text" autocomplete="off" placeholder="请输入英文拼写">
+        <p id="practiceFeedback" class="practice-feedback">输入英文拼写后点击确定。</p>
+        <button id="practiceShowAnswerBtn" class="practice-page-btn practice-ghost-btn" type="button" hidden>显示答案</button>
+
+        <div id="practiceCompletePanel" class="practice-complete-panel" hidden>
+          <h2>本轮完成</h2>
+          <p id="practiceCompleteText">你已经完成当前词库的练习。</p>
+          <div class="practice-complete-actions">
+            <a class="practice-page-btn practice-ghost-btn" href="app.html">返回词库</a>
+            <button id="practiceAgainBtn" class="practice-page-btn practice-primary-btn" type="button">再练一轮</button>
+            <button id="practiceWrongOnlyBtn" class="practice-page-btn practice-ghost-btn" type="button">只练错词</button>
+          </div>
+        </div>
+
+        <div class="practice-bottom-actions">
+          <a class="practice-page-btn practice-ghost-btn" href="app.html">
+            <span aria-hidden="true">↪</span>
+            结束练习
+          </a>
+          <button id="practiceSubmitBtn" class="practice-page-btn practice-primary-btn" type="button">
+            <span aria-hidden="true">✓</span>
+            确定
+          </button>
+        </div>
+      </div>
+
+      <aside class="practice-example-pane">
+        <div class="practice-pane-title">
+          <span aria-hidden="true">“</span>
+          <h2>例句</h2>
+        </div>
+        <div class="practice-divider"></div>
+        <p id="practiceExample" class="practice-example-text">暂无例句，后续可在词条中补充。</p>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
+    const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
+    const LEGACY_WORDS_STORAGE_KEY = "ieltsTypingLearnerWords";
+
+    const libraryNameEl = document.querySelector("#practiceLibraryName");
+    const progressEl = document.querySelector("#practiceProgress");
+    const meaningEl = document.querySelector("#practiceMeaning");
+    const hintEl = document.querySelector("#practiceHint");
+    const answerInput = document.querySelector("#practiceAnswer");
+    const feedbackEl = document.querySelector("#practiceFeedback");
+    const submitBtn = document.querySelector("#practiceSubmitBtn");
+    const showAnswerBtn = document.querySelector("#practiceShowAnswerBtn");
+    const completePanel = document.querySelector("#practiceCompletePanel");
+    const completeText = document.querySelector("#practiceCompleteText");
+    const practiceAgainBtn = document.querySelector("#practiceAgainBtn");
+    const wrongOnlyBtn = document.querySelector("#practiceWrongOnlyBtn");
+    const exampleEl = document.querySelector("#practiceExample");
+
+    let libraries = loadLibraries();
+    let currentLibrary = getCurrentLibrary();
+    let sourceWords = currentLibrary.words || [];
+    let practiceQueue = [];
+    let practiceMode = "all";
+    let currentIndex = 0;
+    let currentWord = null;
+    let attemptCount = 0;
+    let answerRevealed = false;
+    let roundWrongWords = new Set();
+
+    libraryNameEl.textContent = currentLibrary.name;
+    startPractice(sourceWords, "all");
+
+    submitBtn.addEventListener("click", checkAnswer);
+    showAnswerBtn.addEventListener("click", revealAnswer);
+    practiceAgainBtn.addEventListener("click", () => startPractice(currentLibrary.words || [], "all"));
+    wrongOnlyBtn.addEventListener("click", () => {
+      const wrongWords = getCurrentWrongWords();
+
+      if (wrongWords.length === 0) {
+        feedbackEl.textContent = "当前词库暂无错词。";
+        feedbackEl.className = "practice-feedback wrong";
+        return;
+      }
+
+      startPractice(wrongWords, "wrong");
+    });
+
+    answerInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        checkAnswer();
+      }
+    });
+
+    function startPractice(words, mode) {
+      practiceMode = mode;
+      sourceWords = words.map((word) => ({ ...word }));
+      practiceQueue = sourceWords.map((word) => ({ ...word }));
+      currentIndex = 0;
+      currentWord = null;
+      attemptCount = 0;
+      answerRevealed = false;
+      roundWrongWords = new Set();
+      completePanel.hidden = true;
+      submitBtn.disabled = practiceQueue.length === 0;
+      answerInput.disabled = practiceQueue.length === 0;
+      showAnswerBtn.hidden = true;
+
+      if (practiceQueue.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      pickCurrentWord();
+    }
+
+    function pickCurrentWord() {
+      if (currentIndex >= practiceQueue.length) {
+        showRoundComplete();
+        return;
+      }
+
+      currentWord = practiceQueue[currentIndex];
+      attemptCount = 0;
+      answerRevealed = false;
+      answerInput.value = "";
+      answerInput.disabled = false;
+      submitBtn.disabled = false;
+      showAnswerBtn.hidden = true;
+      meaningEl.textContent = currentWord.chinese;
+      hintEl.textContent = createHint(currentWord.english);
+      feedbackEl.textContent = "请输入这个单词的完整英文拼写。";
+      feedbackEl.className = "practice-feedback";
+      exampleEl.textContent = createExampleText(currentWord);
+      progressEl.textContent = `${currentIndex + 1} / ${practiceQueue.length}`;
+      answerInput.focus();
+    }
+
+    function checkAnswer() {
+      if (!currentWord) {
+        feedbackEl.textContent = "当前没有可练习的单词。";
+        feedbackEl.className = "practice-feedback wrong";
+        return;
+      }
+
+      const userAnswer = answerInput.value.trim().toLowerCase();
+
+      if (!userAnswer) {
+        feedbackEl.textContent = "请先输入英文拼写。";
+        feedbackEl.className = "practice-feedback wrong";
+        answerInput.focus();
+        return;
+      }
+
+      if (userAnswer === currentWord.english) {
+        if (practiceMode === "wrong") {
+          markWrongWordCorrect(currentWord);
+        }
+
+        feedbackEl.textContent = currentIndex + 1 >= practiceQueue.length ? "拼写正确，本轮完成。" : "拼写正确，进入下一题。";
+        feedbackEl.className = "practice-feedback correct";
+        currentIndex += 1;
+
+        window.setTimeout(() => {
+          pickCurrentWord();
+        }, 650);
+        return;
+      }
+
+      attemptCount += 1;
+      roundWrongWords.add(currentWord.english);
+      addWrongWord(currentWord);
+
+      if (answerRevealed) {
+        feedbackEl.textContent = `还没有拼对，正确答案是：${currentWord.english}`;
+      } else if (attemptCount === 1) {
+        feedbackEl.textContent = "拼写错误，请再试一次";
+      } else if (attemptCount === 2) {
+        feedbackEl.textContent = "注意首字母和单词长度";
+      } else {
+        feedbackEl.textContent = "还没有拼对，可以先显示答案，再继续输入正确拼写。";
+        showAnswerBtn.hidden = false;
+      }
+
+      feedbackEl.className = "practice-feedback wrong";
+      answerInput.focus();
+      answerInput.select();
+    }
+
+    function revealAnswer() {
+      if (!currentWord) {
+        return;
+      }
+
+      answerRevealed = true;
+      showAnswerBtn.hidden = true;
+      feedbackEl.textContent = `正确答案是：${currentWord.english}。请重新输入正确拼写后进入下一题。`;
+      feedbackEl.className = "practice-feedback wrong";
+      answerInput.focus();
+      answerInput.select();
+    }
+
+    function showRoundComplete() {
+      currentWord = null;
+      answerInput.value = "";
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+      showAnswerBtn.hidden = true;
+      meaningEl.textContent = "本轮完成";
+      hintEl.textContent = "_";
+      exampleEl.textContent = "本轮已经完成，可以返回词库、再练一轮，或集中练习错词。";
+      feedbackEl.textContent = "本轮完成。";
+      feedbackEl.className = "practice-feedback correct";
+      progressEl.textContent = `${practiceQueue.length} / ${practiceQueue.length}`;
+      completeText.textContent = `本轮总词数 ${practiceQueue.length}，错词 ${roundWrongWords.size} 个。`;
+      completePanel.hidden = false;
+    }
+
+    function showEmptyState() {
+      currentWord = null;
+      meaningEl.textContent = "当前词库暂无可练习单词。";
+      hintEl.textContent = "_";
+      exampleEl.textContent = "暂无例句，后续可在词条中补充。";
+      feedbackEl.textContent = "请先返回词库或录入页添加单词。";
+      feedbackEl.className = "practice-feedback wrong";
+      progressEl.textContent = "0 / 0";
+    }
+
+    function createHint(word = "") {
+      if (word.length <= 1) {
+        return word || "_";
+      }
+
+      return `${word[0]} ${Array(word.length - 1).fill("_").join(" ")}`;
+    }
+
+    function createExampleText(word) {
+      if (!word.example) {
+        return "暂无例句，后续可在词条中补充。";
+      }
+
+      const escapedWord = escapeRegExp(word.english);
+      const hiddenWord = "______";
+      return word.example.replace(new RegExp(escapedWord, "gi"), hiddenWord);
+    }
+
+    function addWrongWord(word) {
+      const wrongWords = getCurrentWrongWords();
+      const matchedWord = wrongWords.find((item) => item.english === word.english);
+
+      if (matchedWord) {
+        matchedWord.chinese = word.chinese;
+        matchedWord.wrongCount += 1;
+        matchedWord.correctStreak = 0;
+      } else {
+        wrongWords.push({
+          english: word.english,
+          chinese: word.chinese,
+          wrongCount: 1,
+          correctStreak: 0
+        });
+      }
+
+      wrongWords.sort((a, b) => b.wrongCount - a.wrongCount || a.english.localeCompare(b.english));
+      currentLibrary.wrongWords = wrongWords;
+      saveLibraries();
+    }
+
+    function markWrongWordCorrect(word) {
+      const wrongWords = getCurrentWrongWords();
+      const matchedWord = wrongWords.find((item) => item.english === word.english);
+
+      if (!matchedWord) {
+        return;
+      }
+
+      matchedWord.correctStreak = (matchedWord.correctStreak || 0) + 1;
+
+      if (matchedWord.correctStreak >= 2) {
+        currentLibrary.wrongWords = wrongWords.filter((item) => item.english !== word.english);
+      } else {
+        currentLibrary.wrongWords = wrongWords;
+      }
+
+      saveLibraries();
+    }
+
+    function getCurrentWrongWords() {
+      if (!Array.isArray(currentLibrary.wrongWords)) {
+        currentLibrary.wrongWords = [];
+      }
+
+      return currentLibrary.wrongWords;
+    }
+
+    function getCurrentLibrary() {
+      const savedId = localStorage.getItem(CURRENT_LIBRARY_ID_KEY);
+      const matchedLibrary = libraries.find((library) => library.id === savedId);
+
+      if (matchedLibrary) {
+        return matchedLibrary;
+      }
+
+      if (libraries.length > 0) {
+        localStorage.setItem(CURRENT_LIBRARY_ID_KEY, libraries[0].id);
+        return libraries[0];
+      }
+
+      const emptyLibrary = {
+        id: createLibraryId(),
+        name: "默认词库",
+        words: [],
+        wrongWords: []
+      };
+      libraries = [emptyLibrary];
+      saveLibraries();
+      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, emptyLibrary.id);
+      return emptyLibrary;
+    }
+
+    function loadLibraries() {
+      const savedLibraries = localStorage.getItem(LIBRARIES_STORAGE_KEY);
+
+      if (savedLibraries) {
+        try {
+          const parsedLibraries = JSON.parse(savedLibraries);
+          if (Array.isArray(parsedLibraries) && parsedLibraries.length > 0) {
+            return parsedLibraries.map(normalizeLibrary);
+          }
+        } catch {
+          return createDefaultLibraries();
+        }
+      }
+
+      return createDefaultLibraries();
+    }
+
+    function createDefaultLibraries() {
+      const legacyWords = loadLegacyWords();
+      return [{
+        id: createLibraryId(),
+        name: "默认词库",
+        words: legacyWords,
+        wrongWords: []
+      }];
+    }
+
+    function loadLegacyWords() {
+      const savedWords = localStorage.getItem(LEGACY_WORDS_STORAGE_KEY);
+
+      if (!savedWords) {
+        return [];
+      }
+
+      try {
+        const parsedWords = JSON.parse(savedWords);
+        return Array.isArray(parsedWords) ? parsedWords : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function normalizeLibrary(library) {
+      return {
+        id: library.id || createLibraryId(),
+        name: library.name || "未命名词库",
+        words: Array.isArray(library.words) ? library.words.map(normalizeWord) : [],
+        wrongWords: Array.isArray(library.wrongWords) ? library.wrongWords.map(normalizeWrongWord) : []
+      };
+    }
+
+    function normalizeWord(word = {}) {
+      return {
+        english: word.english || "",
+        chinese: word.chinese || "",
+        ...(word.example ? { example: word.example } : {})
+      };
+    }
+
+    function normalizeWrongWord(word = {}) {
+      return {
+        ...normalizeWord(word),
+        wrongCount: Number.isFinite(Number(word.wrongCount)) && Number(word.wrongCount) > 0 ? Number(word.wrongCount) : 1,
+        correctStreak: Number.isFinite(Number(word.correctStreak)) && Number(word.correctStreak) > 0 ? Number(word.correctStreak) : 0
+      };
+    }
+
+    function saveLibraries() {
+      localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+    }
+
+    function createLibraryId() {
+      return `library-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function escapeRegExp(text) {
+      return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+  </script>
+</body>
+</html>
