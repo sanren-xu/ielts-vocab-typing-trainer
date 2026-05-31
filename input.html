@@ -140,7 +140,8 @@ policy / 政策"></textarea>
 
     const todayName = getTodayName();
     let libraries = loadLibraries();
-    libraryNameInput.value = todayName;
+    let selectedLibraryId = getSavedLibraryId();
+    applyInitialLibraryName();
     renderCurrentWords();
 
     englishInput.addEventListener("keydown", (event) => {
@@ -225,6 +226,17 @@ policy / 政策"></textarea>
     }
 
     function ensureTargetLibrary() {
+      if (selectedLibraryId) {
+        const selectedLibrary = libraries.find((library) => library.id === selectedLibraryId);
+
+        if (selectedLibrary) {
+          localStorage.setItem(CURRENT_LIBRARY_ID_KEY, selectedLibrary.id);
+          return selectedLibrary;
+        }
+
+        selectedLibraryId = "";
+      }
+
       const targetName = getTargetLibraryName();
       let targetLibrary = libraries.find((library) => library.name === targetName);
 
@@ -244,6 +256,12 @@ policy / 政策"></textarea>
     }
 
     function getTargetLibraryName() {
+      const selectedLibrary = selectedLibraryId ? libraries.find((library) => library.id === selectedLibraryId) : null;
+
+      if (selectedLibrary) {
+        return selectedLibrary.name;
+      }
+
       const baseName = libraryNameInput.value.trim() || todayName;
       const source = sourceInput.value.trim();
       return source ? `${baseName}｜${source}` : baseName;
@@ -270,8 +288,46 @@ policy / 政策"></textarea>
     }
 
     function findTargetLibrary() {
+      if (selectedLibraryId) {
+        const selectedLibrary = libraries.find((library) => library.id === selectedLibraryId);
+
+        if (selectedLibrary) {
+          return selectedLibrary;
+        }
+      }
+
       const targetName = getTargetLibraryName();
       return libraries.find((library) => library.name === targetName);
+    }
+
+    function applyInitialLibraryName() {
+      const selectedLibrary = selectedLibraryId ? libraries.find((library) => library.id === selectedLibraryId) : null;
+
+      if (!selectedLibrary) {
+        selectedLibraryId = "";
+        libraryNameInput.value = todayName;
+        sourceInput.value = "";
+        return;
+      }
+
+      const parts = getLibraryParts(selectedLibrary);
+      libraryNameInput.value = parts.name;
+      sourceInput.value = parts.source;
+    }
+
+    function getSavedLibraryId() {
+      const savedId = localStorage.getItem(CURRENT_LIBRARY_ID_KEY);
+      return libraries.some((library) => library.id === savedId) ? savedId : "";
+    }
+
+    function getLibraryParts(library) {
+      const [name, parsedSource] = String(library.name || "").split("｜");
+      const source = (parsedSource || "").trim() || (typeof library.source === "string" ? library.source.trim() : "");
+
+      return {
+        name: name.trim() || library.name || todayName,
+        source
+      };
     }
 
     function parseWords(text) {

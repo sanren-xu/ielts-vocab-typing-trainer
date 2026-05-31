@@ -43,6 +43,7 @@
           <div class="library-detail-actions">
             <button id="renameLibraryBtn" class="practice-page-btn practice-ghost-btn" type="button">重命名</button>
             <button id="deleteLibraryBtn" class="practice-page-btn library-danger-btn" type="button">删除词库</button>
+            <button id="inputLibraryBtn" class="practice-page-btn practice-ghost-btn" type="button">录入单词</button>
             <button id="startLibraryPracticeBtn" class="practice-page-btn practice-primary-btn" type="button">开始练习</button>
           </div>
         </div>
@@ -92,6 +93,7 @@
     const newLibraryBtn = document.querySelector("#newLibraryBtn");
     const renameLibraryBtn = document.querySelector("#renameLibraryBtn");
     const deleteLibraryBtn = document.querySelector("#deleteLibraryBtn");
+    const inputLibraryBtn = document.querySelector("#inputLibraryBtn");
     const startPracticeBtn = document.querySelector("#startLibraryPracticeBtn");
     const modalBackdrop = document.querySelector("#libraryModal");
     const modalForm = document.querySelector("#libraryModalForm");
@@ -111,6 +113,7 @@
     newLibraryBtn.addEventListener("click", createLibrary);
     renameLibraryBtn.addEventListener("click", renameCurrentLibrary);
     deleteLibraryBtn.addEventListener("click", deleteCurrentLibrary);
+    inputLibraryBtn.addEventListener("click", openInputPage);
     startPracticeBtn.addEventListener("click", startPractice);
     modalCancel.addEventListener("click", closeModal);
     modalBackdrop.addEventListener("click", (event) => {
@@ -389,6 +392,11 @@
     function startPractice() {
       localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
       window.location.href = "practice.html";
+    }
+
+    function openInputPage() {
+      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
+      window.location.href = "input.html";
     }
 
     function updateWrongWordAfterEdit(library, oldEnglish, updatedWord) {
