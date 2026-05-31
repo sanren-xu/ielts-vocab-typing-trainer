@@ -58,16 +58,32 @@
         </button>
       </div>
 
-      <label class="entry-batch-wrap">
+      <section class="entry-batch-wrap entry-current-wrap" aria-label="当前录入词汇">
         <span class="entry-batch-icon" aria-hidden="true">▤</span>
-        <textarea id="entryBatchText" maxlength="5000" spellcheck="false" placeholder="在这里粘贴或输入生词内容
+        <div class="entry-current-content">
+          <div class="entry-current-head">
+            <div>
+              <h2>当前录入词汇</h2>
+              <p id="entryCurrentLibrary">当前词库：今日词库</p>
+            </div>
+            <strong id="entryWordCount">0 个词</strong>
+          </div>
+
+          <ul id="entryCurrentList" class="entry-current-list"></ul>
+          <p id="entryEmptyText" class="entry-empty-text">还没有录入词汇。可以先用上方输入框添加，或在下方批量粘贴。</p>
+
+          <label class="entry-batch-input-wrap">
+            <span>批量粘贴</span>
+            <textarea id="entryBatchText" maxlength="5000" spellcheck="false" placeholder="在这里粘贴或输入生词内容
 支持自动识别：
 evidence - 证据
 estimate：估计
 research 研究
 policy / 政策"></textarea>
-        <small id="entryCharCount">0 / 5000</small>
-      </label>
+            <small id="entryCharCount">0 / 5000</small>
+          </label>
+        </div>
+      </section>
 
       <p id="entryMessage" class="entry-message" role="status"></p>
     </section>
@@ -117,10 +133,15 @@ policy / 政策"></textarea>
     const autoParseBtn = document.querySelector("#autoParseBtn");
     const batchAddBtn = document.querySelector("#batchAddBtn");
     const startPracticeBtn = document.querySelector("#startPracticeFromHomeBtn");
+    const currentLibraryText = document.querySelector("#entryCurrentLibrary");
+    const currentList = document.querySelector("#entryCurrentList");
+    const emptyText = document.querySelector("#entryEmptyText");
+    const wordCount = document.querySelector("#entryWordCount");
 
     const todayName = getTodayName();
     let libraries = loadLibraries();
     libraryNameInput.value = todayName;
+    renderCurrentWords();
 
     englishInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -147,6 +168,9 @@ policy / 政策"></textarea>
     batchText.addEventListener("input", () => {
       charCount.textContent = `${batchText.value.length} / 5000`;
     });
+
+    libraryNameInput.addEventListener("input", renderCurrentWords);
+    sourceInput.addEventListener("input", renderCurrentWords);
 
     function addSingleWord() {
       const english = englishInput.value.trim().toLowerCase();
@@ -193,6 +217,7 @@ policy / 政策"></textarea>
       const result = mergeWords(targetLibrary.words, newWords);
       targetLibrary.words = result.words;
       saveLibraries();
+      renderCurrentWords(targetLibrary);
 
       const status = result.added > 0 ? "success" : "error";
       showMessage(`已添加 ${result.added} 个，跳过 ${result.skipped} 个重复。当前词库：${targetLibrary.name}`, status);
@@ -222,6 +247,31 @@ policy / 政策"></textarea>
       const baseName = libraryNameInput.value.trim() || todayName;
       const source = sourceInput.value.trim();
       return source ? `${baseName}｜${source}` : baseName;
+    }
+
+    function renderCurrentWords(library = findTargetLibrary()) {
+      const targetName = getTargetLibraryName();
+      const currentWords = library ? library.words : [];
+      currentLibraryText.textContent = `当前词库：${targetName}`;
+      wordCount.textContent = `${currentWords.length} 个词`;
+      currentList.innerHTML = "";
+      emptyText.hidden = currentWords.length > 0;
+
+      currentWords.forEach((word) => {
+        const item = document.createElement("li");
+        const english = document.createElement("strong");
+        const chinese = document.createElement("span");
+
+        english.textContent = word.english;
+        chinese.textContent = word.chinese;
+        item.append(english, chinese);
+        currentList.appendChild(item);
+      });
+    }
+
+    function findTargetLibrary() {
+      const targetName = getTargetLibraryName();
+      return libraries.find((library) => library.name === targetName);
     }
 
     function parseWords(text) {
