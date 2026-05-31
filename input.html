@@ -58,30 +58,20 @@
         </button>
       </div>
 
-      <section class="entry-batch-wrap entry-current-wrap" aria-label="当前录入词汇">
+      <section class="entry-batch-wrap entry-current-wrap" aria-label="本次录入词汇">
         <span class="entry-batch-icon" aria-hidden="true">▤</span>
         <div class="entry-current-content">
           <div class="entry-current-head">
             <div>
-              <h2>当前录入词汇</h2>
+              <h2>本次录入词汇</h2>
               <p id="entryCurrentLibrary">当前词库：今日词库</p>
+              <p>只显示本次新增的单词，历史单词可在“我的词库”查看。</p>
             </div>
             <strong id="entryWordCount">0 个词</strong>
           </div>
 
           <ul id="entryCurrentList" class="entry-current-list"></ul>
-          <p id="entryEmptyText" class="entry-empty-text">还没有录入词汇。可以先用上方输入框添加，或在下方批量粘贴。</p>
-
-          <label class="entry-batch-input-wrap">
-            <span>批量粘贴</span>
-            <textarea id="entryBatchText" maxlength="5000" spellcheck="false" placeholder="在这里粘贴或输入生词内容
-支持自动识别：
-evidence - 证据
-estimate：估计
-research 研究
-policy / 政策"></textarea>
-            <small id="entryCharCount">0 / 5000</small>
-          </label>
+          <p id="entryEmptyText" class="entry-empty-text">本次还没有录入单词。</p>
         </div>
       </section>
 
@@ -93,7 +83,7 @@ policy / 政策"></textarea>
         <span class="entry-action-icon" aria-hidden="true">▦</span>
         <span>
           <strong>自动识别录入</strong>
-          <small>自动拆分英文和中文</small>
+          <small>使用上方输入快速添加</small>
         </span>
         <b aria-hidden="true">›</b>
       </button>
@@ -127,8 +117,6 @@ policy / 政策"></textarea>
     const englishInput = document.querySelector("#entryEnglish");
     const chineseInput = document.querySelector("#entryChinese");
     const addBtn = document.querySelector("#entryAddBtn");
-    const batchText = document.querySelector("#entryBatchText");
-    const charCount = document.querySelector("#entryCharCount");
     const message = document.querySelector("#entryMessage");
     const autoParseBtn = document.querySelector("#autoParseBtn");
     const batchAddBtn = document.querySelector("#batchAddBtn");
@@ -139,10 +127,12 @@ policy / 政策"></textarea>
     const wordCount = document.querySelector("#entryWordCount");
 
     const todayName = getTodayName();
+    const inputMode = new URLSearchParams(window.location.search).get("mode") === "append" ? "append" : "new";
     let libraries = loadLibraries();
-    let selectedLibraryId = getSavedLibraryId();
+    let selectedLibraryId = initializeTargetLibraryId();
+    let sessionWords = [];
     applyInitialLibraryName();
-    renderCurrentWords();
+    renderSessionWords();
 
     englishInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -159,21 +149,18 @@ policy / 政策"></textarea>
     });
 
     addBtn.addEventListener("click", addSingleWord);
-    autoParseBtn.addEventListener("click", addBatchWords);
-    batchAddBtn.addEventListener("click", addBatchWords);
+    autoParseBtn.addEventListener("click", addSingleWord);
+    batchAddBtn.addEventListener("click", openBulkPage);
     startPracticeBtn.addEventListener("click", () => {
       ensureTargetLibrary();
       window.location.href = "practice.html";
     });
 
-    batchText.addEventListener("input", () => {
-      charCount.textContent = `${batchText.value.length} / 5000`;
-    });
-
-    libraryNameInput.addEventListener("input", renderCurrentWords);
-    sourceInput.addEventListener("input", renderCurrentWords);
+    libraryNameInput.addEventListener("input", syncCurrentLibraryMeta);
+    sourceInput.addEventListener("input", syncCurrentLibraryMeta);
 
     function addSingleWord() {
+      syncCurrentLibraryMeta();
       const english = englishInput.value.trim().toLowerCase();
       const chinese = normalizeChineseMeaning(chineseInput.value);
 
@@ -197,32 +184,23 @@ policy / 政策"></textarea>
       englishInput.focus();
     }
 
-    function addBatchWords() {
-      const parsedWords = parseWords(batchText.value);
-
-      if (parsedWords.length === 0) {
-        showMessage("没有识别到有效生词，请检查格式。", "error");
-        batchText.focus();
-        return;
-      }
-
-      const result = addWordsToTargetLibrary(parsedWords);
-      if (result.added > 0) {
-        batchText.value = "";
-        charCount.textContent = "0 / 5000";
-      }
-    }
-
     function addWordsToTargetLibrary(newWords) {
       const targetLibrary = ensureTargetLibrary();
       const result = mergeWords(targetLibrary.words, newWords);
       targetLibrary.words = result.words;
       saveLibraries();
-      renderCurrentWords(targetLibrary);
+      sessionWords = result.addedWords.concat(sessionWords);
+      renderSessionWords();
 
       const status = result.added > 0 ? "success" : "error";
       showMessage(`已添加 ${result.added} 个，跳过 ${result.skipped} 个重复。当前词库：${targetLibrary.name}`, status);
       return result;
+    }
+
+    function openBulkPage() {
+      syncCurrentLibraryMeta();
+      ensureTargetLibrary();
+      window.location.href = "bulk.html";
     }
 
     function ensureTargetLibrary() {
@@ -230,6 +208,7 @@ policy / 政策"></textarea>
         const selectedLibrary = libraries.find((library) => library.id === selectedLibraryId);
 
         if (selectedLibrary) {
+          syncCurrentLibraryMeta();
           localStorage.setItem(CURRENT_LIBRARY_ID_KEY, selectedLibrary.id);
           return selectedLibrary;
         }
@@ -259,7 +238,7 @@ policy / 政策"></textarea>
       const selectedLibrary = selectedLibraryId ? libraries.find((library) => library.id === selectedLibraryId) : null;
 
       if (selectedLibrary) {
-        return selectedLibrary.name;
+        return composeLibraryName(libraryNameInput.value, sourceInput.value);
       }
 
       const baseName = libraryNameInput.value.trim() || todayName;
@@ -267,15 +246,14 @@ policy / 政策"></textarea>
       return source ? `${baseName}｜${source}` : baseName;
     }
 
-    function renderCurrentWords(library = findTargetLibrary()) {
+    function renderSessionWords() {
       const targetName = getTargetLibraryName();
-      const currentWords = library ? library.words : [];
       currentLibraryText.textContent = `当前词库：${targetName}`;
-      wordCount.textContent = `${currentWords.length} 个词`;
+      wordCount.textContent = `${sessionWords.length} 个词`;
       currentList.innerHTML = "";
-      emptyText.hidden = currentWords.length > 0;
+      emptyText.hidden = sessionWords.length > 0;
 
-      currentWords.forEach((word) => {
+      sessionWords.forEach((word) => {
         const item = document.createElement("li");
         const english = document.createElement("strong");
         const chinese = document.createElement("span");
@@ -287,17 +265,24 @@ policy / 政策"></textarea>
       });
     }
 
-    function findTargetLibrary() {
-      if (selectedLibraryId) {
-        const selectedLibrary = libraries.find((library) => library.id === selectedLibraryId);
+    function syncCurrentLibraryMeta() {
+      const currentLibrary = selectedLibraryId ? libraries.find((library) => library.id === selectedLibraryId) : null;
 
-        if (selectedLibrary) {
-          return selectedLibrary;
-        }
+      if (!currentLibrary) {
+        renderSessionWords();
+        return;
       }
 
-      const targetName = getTargetLibraryName();
-      return libraries.find((library) => library.name === targetName);
+      currentLibrary.name = composeLibraryName(libraryNameInput.value, sourceInput.value);
+
+      if (sourceInput.value.trim()) {
+        currentLibrary.source = sourceInput.value.trim();
+      } else {
+        delete currentLibrary.source;
+      }
+
+      saveLibraries();
+      renderSessionWords();
     }
 
     function applyInitialLibraryName() {
@@ -320,6 +305,47 @@ policy / 政策"></textarea>
       return libraries.some((library) => library.id === savedId) ? savedId : "";
     }
 
+    function initializeTargetLibraryId() {
+      if (inputMode === "append") {
+        return getSavedLibraryId();
+      }
+
+      const newLibrary = {
+        id: createLibraryId(),
+        name: createTodayLibraryName(),
+        words: [],
+        wrongWords: []
+      };
+
+      libraries.push(newLibrary);
+      saveLibraries();
+      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, newLibrary.id);
+      return newLibrary.id;
+    }
+
+    function createTodayLibraryName() {
+      const existingNames = new Set(libraries.map((library) => library.name));
+
+      if (!existingNames.has(todayName)) {
+        return todayName;
+      }
+
+      let copyIndex = 2;
+      let candidateName = `${todayName} ${toCircledNumber(copyIndex)}`;
+
+      while (existingNames.has(candidateName)) {
+        copyIndex += 1;
+        candidateName = `${todayName} ${toCircledNumber(copyIndex)}`;
+      }
+
+      return candidateName;
+    }
+
+    function toCircledNumber(number) {
+      const circledNumbers = ["", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"];
+      return circledNumbers[number] || `(${number})`;
+    }
+
     function getLibraryParts(library) {
       const [name, parsedSource] = String(library.name || "").split("｜");
       const source = (parsedSource || "").trim() || (typeof library.source === "string" ? library.source.trim() : "");
@@ -330,48 +356,34 @@ policy / 政策"></textarea>
       };
     }
 
-    function parseWords(text) {
-      return text
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map(parseWordLine)
-        .filter(Boolean);
-    }
-
-    function parseWordLine(line) {
-      const explicitParts = line.split(/\s*(?:\t|[-—–：:=\/|｜])\s*/);
-      const whitespaceMatch = line.match(/^([A-Za-z][A-Za-z\s.'-]*?)\s+([\u4e00-\u9fff].+)$/);
-      const englishPart = explicitParts.length >= 2 ? explicitParts[0] : whitespaceMatch?.[1];
-      const chinesePart = explicitParts.length >= 2 ? explicitParts.slice(1).join(" ") : whitespaceMatch?.[2];
-      const english = (englishPart || "").trim().toLowerCase();
-      const chinese = normalizeChineseMeaning(chinesePart || "");
-
-      if (!english || !chinese) {
-        return null;
-      }
-
-      return { english, chinese };
+    function composeLibraryName(name, source) {
+      const cleanName = name.trim() || todayName;
+      const cleanSource = source.trim();
+      return cleanSource ? `${cleanName}｜${cleanSource}` : cleanName;
     }
 
     function mergeWords(oldWords, newWords) {
-      const wordMap = new Map();
+      const existingWords = [...oldWords];
+      const existingEnglish = new Set(existingWords.map((word) => word.english));
+      const addedWords = [];
       let added = 0;
       let skipped = 0;
 
-      oldWords.forEach((word) => wordMap.set(word.english, word));
       newWords.forEach((word) => {
-        if (wordMap.has(word.english)) {
+        if (existingEnglish.has(word.english)) {
           skipped += 1;
           return;
         }
 
-        wordMap.set(word.english, word);
+        existingWords.push(word);
+        addedWords.push(word);
+        existingEnglish.add(word.english);
         added += 1;
       });
 
       return {
-        words: Array.from(wordMap.values()).sort((a, b) => a.english.localeCompare(b.english)),
+        words: existingWords,
+        addedWords,
         added,
         skipped
       };

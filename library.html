@@ -396,7 +396,7 @@
 
     function openInputPage() {
       localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
-      window.location.href = "input.html";
+      window.location.href = "input.html?mode=append";
     }
 
     function updateWrongWordAfterEdit(library, oldEnglish, updatedWord) {

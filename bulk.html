@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>批量添加到词库 - IELTS Typing Learner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page bulk-page">
+  <main class="library-shell">
+    <header class="library-topbar">
+      <a class="practice-back-btn" href="input.html" aria-label="返回录入页">
+        <span aria-hidden="true">←</span>
+        返回录入页
+      </a>
+      <h1>批量添加到词库</h1>
+      <button class="home-nav-btn" type="button" aria-label="设置">
+        <span aria-hidden="true">⚙</span>
+        设置
+      </button>
+    </header>
+
+    <section class="bulk-current-card">
+      <span>当前词库</span>
+      <strong id="bulkLibraryName">正在读取...</strong>
+      <p id="bulkStatus" class="library-page-message" role="status"></p>
+    </section>
+
+    <section class="bulk-workspace" aria-label="批量添加">
+      <section class="entry-card bulk-panel">
+        <div class="library-card-heading">
+          <div>
+            <span>批量粘贴</span>
+            <h2>解析多行生词</h2>
+          </div>
+        </div>
+
+        <textarea id="bulkText" class="bulk-textarea" spellcheck="false" placeholder="evidence - 证据
+estimate：估计
+research 研究
+policy / 政策"></textarea>
+
+        <button id="bulkAddBtn" class="entry-add-btn" type="button">解析并添加</button>
+      </section>
+
+      <section class="entry-card bulk-panel">
+        <div class="library-card-heading">
+          <div>
+            <span>导入文件</span>
+            <h2>导入 Word / Excel / JSON 文件</h2>
+          </div>
+        </div>
+
+        <p class="bulk-help">支持 .docx、.xlsx、部分文本型 .xls，以及项目现有 JSON 导出格式。导入后只会把识别出的单词添加到当前词库，并自动跳过重复单词。</p>
+        <label class="bulk-file-btn">
+          <input id="bulkFileInput" type="file" accept=".docx,.xlsx,.xls,application/json,.json" multiple>
+          选择文件
+        </label>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
+    const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
+
+    const libraryNameEl = document.querySelector("#bulkLibraryName");
+    const statusEl = document.querySelector("#bulkStatus");
+    const bulkText = document.querySelector("#bulkText");
+    const bulkAddBtn = document.querySelector("#bulkAddBtn");
+    const fileInput = document.querySelector("#bulkFileInput");
+
+    let libraries = loadLibraries();
+    let currentLibrary = getCurrentLibrary();
+
+    renderCurrentLibrary();
+
+    bulkAddBtn.addEventListener("click", addFromTextarea);
+    fileInput.addEventListener("change", importFiles);
+
+    function renderCurrentLibrary() {
+      if (!currentLibrary) {
+        libraryNameEl.textContent = "未选择词库";
+        showStatus("当前没有选中的词库，请先返回录入页或我的词库选择词库。", "error");
+        bulkText.disabled = true;
+        bulkAddBtn.disabled = true;
+        fileInput.disabled = true;
+        return;
+      }
+
+      libraryNameEl.textContent = currentLibrary.name;
+      showStatus("可以粘贴多行生词，或导入 JSON 文件。");
+    }
+
+    function addFromTextarea() {
+      if (!currentLibrary) {
+        return;
+      }
+
+      const parsedWords = parseWords(bulkText.value);
+
+      if (parsedWords.length === 0) {
+        showStatus("没有识别到有效生词，请检查格式。", "error");
+        bulkText.focus();
+        return;
+      }
+
+      const result = addWordsToCurrentLibrary(parsedWords);
+      if (result.added > 0) {
+        bulkText.value = "";
+      }
+    }
+
+    async function importFiles(event) {
+      const files = Array.from(event.target.files || []);
+      event.target.value = "";
+
+      if (files.length === 0 || !currentLibrary) {
+        return;
+      }
+
+      let allWords = [];
+      let failedCount = 0;
+
+      for (const file of files) {
+        try {
+          const fileWords = await parseFileToWords(file);
+          allWords = allWords.concat(fileWords);
+        } catch {
+          failedCount += 1;
+        }
+      }
+
+      if (allWords.length === 0) {
+        const failedText = failedCount > 0 ? "部分文件无法解析，.xls 如为老式二进制格式请另存为 .xlsx。" : "没有识别到有效单词。";
+        showStatus(`导入失败：${failedText}`, "error");
+        return;
+      }
+
+      const result = addWordsToCurrentLibrary(allWords);
+      const failedText = failedCount > 0 ? `，${failedCount} 个文件未能解析` : "";
+      showStatus(`成功添加 ${result.added} 个，跳过 ${result.skipped} 个重复${failedText}。`, result.added > 0 ? "success" : "error");
+    }
+
+    function addWordsToCurrentLibrary(newWords) {
+      const result = mergeWords(getWords(currentLibrary), newWords);
+      currentLibrary.words = result.words;
+      saveLibraries();
+      showStatus(`已添加 ${result.added} 个，跳过 ${result.skipped} 个重复。`, result.added > 0 ? "success" : "error");
+      return result;
+    }
+
+    function parseWords(text) {
+      return text
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map(parseWordLine)
+        .filter(Boolean);
+    }
+
+    function parseWordLine(line) {
+      const explicitParts = line.split(/\s*(?:\t|[-—–：:=\/|｜])\s*/);
+      const whitespaceMatch = line.match(/^([A-Za-z][A-Za-z\s.'-]*?)\s+([\u4e00-\u9fff].+)$/);
+      const englishPart = explicitParts.length >= 2 ? explicitParts[0] : whitespaceMatch?.[1];
+      const chinesePart = explicitParts.length >= 2 ? explicitParts.slice(1).join(" ") : whitespaceMatch?.[2];
+      const english = (englishPart || "").trim().toLowerCase();
+      const chinese = normalizeChineseMeaning(chinesePart || "");
+
+      if (!english || !chinese) {
+        return null;
+      }
+
+      return { english, chinese, example: "" };
+    }
+
+    function parseImportedWords(data) {
+      if (Array.isArray(data)) {
+        return data.map(validateImportedWord).filter(Boolean);
+      }
+
+      if (!data || typeof data !== "object") {
+        return [];
+      }
+
+      if (Array.isArray(data.words)) {
+        return data.words.map(validateImportedWord).filter(Boolean);
+      }
+
+      if (Array.isArray(data.libraries)) {
+        return data.libraries.flatMap((library) => Array.isArray(library.words) ? library.words.map(validateImportedWord).filter(Boolean) : []);
+      }
+
+      return [];
+    }
+
+    async function parseFileToWords(file) {
+      const extension = getFileExtension(file.name);
+
+      if (extension === "json") {
+        const text = await readFileAsText(file);
+        return parseImportedWords(JSON.parse(text));
+      }
+
+      if (extension === "docx") {
+        return parseDocxWords(await file.arrayBuffer());
+      }
+
+      if (extension === "xlsx") {
+        return parseXlsxWords(await file.arrayBuffer());
+      }
+
+      if (extension === "xls") {
+        const text = await readFileAsText(file);
+        const parsedWords = parseRowsToWords(splitTableText(text));
+
+        if (parsedWords.length === 0) {
+          throw new Error("老式二进制 .xls 暂不支持。");
+        }
+
+        return parsedWords;
+      }
+
+      throw new Error("不支持的文件类型。");
+    }
+
+    async function parseDocxWords(arrayBuffer) {
+      const entries = await unzipEntries(arrayBuffer);
+      const documentXml = entries.get("word/document.xml");
+
+      if (!documentXml) {
+        return [];
+      }
+
+      const doc = parseXml(documentXml);
+      const tableRows = Array.from(doc.querySelectorAll("w\\:tr, tr"))
+        .map((row) => Array.from(row.querySelectorAll("w\\:tc, tc")).map(readXmlText).filter(Boolean))
+        .filter((row) => row.length >= 2);
+
+      if (tableRows.length > 0) {
+        return parseRowsToWords(tableRows);
+      }
+
+      const paragraphs = Array.from(doc.querySelectorAll("w\\:p, p"))
+        .map(readXmlText)
+        .map((text) => text.trim())
+        .filter(Boolean);
+
+      return paragraphs.map(parseWordLine).filter(Boolean);
+    }
+
+    async function parseXlsxWords(arrayBuffer) {
+      const entries = await unzipEntries(arrayBuffer);
+      const sharedStrings = parseSharedStrings(entries.get("xl/sharedStrings.xml") || "");
+      const sheetName = Array.from(entries.keys()).find((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name));
+
+      if (!sheetName) {
+        return [];
+      }
+
+      const sheetDoc = parseXml(entries.get(sheetName));
+      const rows = Array.from(sheetDoc.querySelectorAll("row")).map((row) => {
+        const cells = Array.from(row.querySelectorAll("c"));
+        return cells.map((cell) => readXlsxCell(cell, sharedStrings));
+      });
+
+      return parseRowsToWords(rows);
+    }
+
+    function parseRowsToWords(rows) {
+      return rows
+        .map((row) => {
+          const english = String(row[0] || "").trim().toLowerCase();
+          const chinese = normalizeChineseMeaning(String(row[1] || ""));
+          const example = String(row[2] || "").trim();
+
+          if (!english || !chinese || !/[a-z]/i.test(english) || isHeaderRow(english, chinese)) {
+            return null;
+          }
+
+          return {
+            english,
+            chinese,
+            example
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function splitTableText(text) {
+      return text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.split(/\t|,/).map((cell) => cell.trim()));
+    }
+
+    function parseSharedStrings(xmlText) {
+      if (!xmlText) {
+      return [];
+    }
+
+    function isHeaderRow(english, chinese) {
+      const englishHeader = ["english", "word", "vocabulary", "单词", "英文"].includes(english);
+      const chineseHeader = ["chinese", "meaning", "释义", "中文", "中文释义"].includes(chinese.toLowerCase());
+      return englishHeader && chineseHeader;
+    }
+
+      const doc = parseXml(xmlText);
+      return Array.from(doc.querySelectorAll("si")).map(readXmlText);
+    }
+
+    function readXlsxCell(cell, sharedStrings) {
+      const type = cell.getAttribute("t");
+
+      if (type === "s") {
+        const index = Number(cell.querySelector("v")?.textContent || "-1");
+        return sharedStrings[index] || "";
+      }
+
+      if (type === "inlineStr") {
+        return readXmlText(cell);
+      }
+
+      return cell.querySelector("v")?.textContent || "";
+    }
+
+    async function unzipEntries(arrayBuffer) {
+      const view = new DataView(arrayBuffer);
+      const bytes = new Uint8Array(arrayBuffer);
+      const entries = new Map();
+      const eocdOffset = findEndOfCentralDirectory(view);
+
+      if (eocdOffset < 0) {
+        throw new Error("不是有效的 zip 文件。");
+      }
+
+      const entryCount = view.getUint16(eocdOffset + 10, true);
+      let centralOffset = view.getUint32(eocdOffset + 16, true);
+
+      for (let index = 0; index < entryCount; index += 1) {
+        if (view.getUint32(centralOffset, true) !== 0x02014b50) {
+          throw new Error("zip 中央目录无效。");
+        }
+
+        const compression = view.getUint16(centralOffset + 10, true);
+        const compressedSize = view.getUint32(centralOffset + 20, true);
+        const fileNameLength = view.getUint16(centralOffset + 28, true);
+        const extraLength = view.getUint16(centralOffset + 30, true);
+        const commentLength = view.getUint16(centralOffset + 32, true);
+        const localOffset = view.getUint32(centralOffset + 42, true);
+        const fileName = decodeBytes(bytes.slice(centralOffset + 46, centralOffset + 46 + fileNameLength));
+        const localNameLength = view.getUint16(localOffset + 26, true);
+        const localExtraLength = view.getUint16(localOffset + 28, true);
+        const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+        const compressedData = bytes.slice(dataStart, dataStart + compressedSize);
+        const text = await inflateZipText(compressedData, compression);
+
+        entries.set(fileName, text);
+        centralOffset += 46 + fileNameLength + extraLength + commentLength;
+      }
+
+      return entries;
+    }
+
+    function findEndOfCentralDirectory(view) {
+      const minOffset = Math.max(0, view.byteLength - 65557);
+
+      for (let offset = view.byteLength - 22; offset >= minOffset; offset -= 1) {
+        if (view.getUint32(offset, true) === 0x06054b50) {
+          return offset;
+        }
+      }
+
+      return -1;
+    }
+
+    async function inflateZipText(data, compression) {
+      if (compression === 0) {
+        return decodeBytes(data);
+      }
+
+      if (compression !== 8 || typeof DecompressionStream === "undefined") {
+        throw new Error("浏览器不支持当前压缩格式。");
+      }
+
+      const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      const buffer = await new Response(stream).arrayBuffer();
+      return decodeBytes(new Uint8Array(buffer));
+    }
+
+    function parseXml(text) {
+      return new DOMParser().parseFromString(text, "application/xml");
+    }
+
+    function readXmlText(node) {
+      return Array.from(node.querySelectorAll("w\\:t, t"))
+        .map((textNode) => textNode.textContent || "")
+        .join("")
+        .trim();
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => resolve(String(reader.result || "")));
+        reader.addEventListener("error", reject);
+        reader.readAsText(file);
+      });
+    }
+
+    function decodeBytes(bytes) {
+      return new TextDecoder("utf-8").decode(bytes);
+    }
+
+    function getFileExtension(fileName) {
+      return fileName.split(".").pop().toLowerCase();
+    }
+
+    function validateImportedWord(word) {
+      if (!word || typeof word !== "object" || Array.isArray(word)) {
+        return null;
+      }
+
+      const english = typeof word.english === "string" ? word.english.trim().toLowerCase() : "";
+      const chinese = typeof word.chinese === "string" ? normalizeChineseMeaning(word.chinese) : "";
+
+      if (!english || !chinese) {
+        return null;
+      }
+
+      return {
+        english,
+        chinese,
+        example: typeof word.example === "string" ? word.example.trim() : ""
+      };
+    }
+
+    function mergeWords(oldWords, newWords) {
+      const mergedWords = [...oldWords];
+      const existingEnglish = new Set(mergedWords.map((word) => word.english));
+      let added = 0;
+      let skipped = 0;
+
+      newWords.forEach((word) => {
+        if (existingEnglish.has(word.english)) {
+          skipped += 1;
+          return;
+        }
+
+        mergedWords.push(word);
+        existingEnglish.add(word.english);
+        added += 1;
+      });
+
+      return {
+        words: mergedWords,
+        added,
+        skipped
+      };
+    }
+
+    function normalizeChineseMeaning(text) {
+      return text
+        .split(/[；;，,、\/|｜]+/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .join("；");
+    }
+
+    function getCurrentLibrary() {
+      const savedId = localStorage.getItem(CURRENT_LIBRARY_ID_KEY);
+      return libraries.find((library) => library.id === savedId) || null;
+    }
+
+    function getWords(library) {
+      if (!Array.isArray(library.words)) {
+        library.words = [];
+      }
+
+      return library.words;
+    }
+
+    function loadLibraries() {
+      const savedLibraries = localStorage.getItem(LIBRARIES_STORAGE_KEY);
+
+      if (!savedLibraries) {
+        return [];
+      }
+
+      try {
+        const parsedLibraries = JSON.parse(savedLibraries);
+        return Array.isArray(parsedLibraries) ? parsedLibraries.map(normalizeLibrary) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function normalizeLibrary(library = {}) {
+      return {
+        ...library,
+        id: library.id || "",
+        name: library.name || "未命名词库",
+        words: Array.isArray(library.words) ? library.words : [],
+        wrongWords: Array.isArray(library.wrongWords) ? library.wrongWords : []
+      };
+    }
+
+    function saveLibraries() {
+      localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+    }
+
+    function showStatus(text, type = "normal") {
+      statusEl.textContent = text;
+      statusEl.className = `library-page-message ${type}`;
+    }
+  </script>
+</body>
+</html>
