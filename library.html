@@ -147,6 +147,7 @@
 
     function renderPage() {
       const currentLibrary = getCurrentLibrary();
+      currentLibraryId = currentLibrary ? currentLibrary.id : "";
       renderLibraryList();
       renderLibraryDetail(currentLibrary);
       saveCurrentLibraryId();
@@ -179,6 +180,11 @@
     }
 
     function renderLibraryDetail(library) {
+      if (!library) {
+        renderEmptyLibraryDetail();
+        return;
+      }
+
       const parts = getLibraryParts(library);
       const words = getWords(library);
       const wrongWords = getWrongWords(library);
@@ -192,9 +198,12 @@
       overviewSourceEl.textContent = `来源：${parts.source || "未填写来源"}`;
       overviewWordCountEl.textContent = `${words.length} 个单词`;
       renderWordPreview(words);
-      deleteLibraryBtn.disabled = libraries.length <= 1;
+      renameLibraryBtn.disabled = false;
+      deleteLibraryBtn.disabled = false;
+      inputLibraryBtn.disabled = false;
       startPracticeBtn.disabled = words.length === 0;
       wordListEl.innerHTML = "";
+      emptyTextEl.textContent = "当前词库还没有单词。可以先去“录入今日生词”页面添加。";
       emptyTextEl.hidden = words.length > 0;
 
       words.forEach((word) => {
@@ -229,6 +238,24 @@
         item.append(content, actions);
         wordListEl.appendChild(item);
       });
+    }
+
+    function renderEmptyLibraryDetail() {
+      detailNameEl.textContent = "还没有词库";
+      detailSourceEl.hidden = true;
+      detailWordCountEl.textContent = "0";
+      detailWrongCountEl.textContent = "0";
+      overviewNameEl.textContent = "还没有词库";
+      overviewSourceEl.textContent = "请先新建一个词库";
+      overviewWordCountEl.textContent = "0 个单词";
+      renderWordPreview([]);
+      wordListEl.innerHTML = "";
+      emptyTextEl.textContent = "还没有词库。请先点击左侧“新建词库”。";
+      emptyTextEl.hidden = false;
+      renameLibraryBtn.disabled = true;
+      deleteLibraryBtn.disabled = true;
+      inputLibraryBtn.disabled = true;
+      startPracticeBtn.disabled = true;
     }
 
     function renderWordPreview(words) {
@@ -289,6 +316,12 @@
 
     async function renameCurrentLibrary() {
       const library = getCurrentLibrary();
+
+      if (!library) {
+        showMessage("请先新建一个词库。", "error");
+        return;
+      }
+
       const parts = getLibraryParts(library);
       const result = await openModal({
         title: "重命名词库",
@@ -326,8 +359,8 @@
     async function deleteCurrentLibrary() {
       const library = getCurrentLibrary();
 
-      if (libraries.length <= 1) {
-        showMessage("至少保留一个词库。", "error");
+      if (!library) {
+        showMessage("当前没有可删除的词库。", "error");
         return;
       }
 
@@ -343,10 +376,10 @@
       }
 
       libraries = libraries.filter((item) => item.id !== library.id);
-      currentLibraryId = libraries[0].id;
+      currentLibraryId = libraries[0]?.id || "";
       saveLibraries();
       renderPage();
-      showMessage("词库已删除。", "success");
+      showMessage(libraries.length > 0 ? "词库已删除。" : "词库已删除，请新建词库。", "success");
     }
 
     async function editWord(oldEnglish) {
@@ -429,11 +462,21 @@
     }
 
     function startPractice() {
+      if (!currentLibraryId) {
+        showMessage("请先新建一个词库。", "error");
+        return;
+      }
+
       localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
       window.location.href = "practice.html";
     }
 
     function openInputPage() {
+      if (!currentLibraryId) {
+        showMessage("请先新建一个词库。", "error");
+        return;
+      }
+
       localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
       window.location.href = "input.html?mode=append";
     }
@@ -461,6 +504,10 @@
     }
 
     function getWords(library) {
+      if (!library) {
+        return [];
+      }
+
       if (!Array.isArray(library.words)) {
         library.words = [];
       }
@@ -469,6 +516,10 @@
     }
 
     function getWrongWords(library) {
+      if (!library) {
+        return [];
+      }
+
       if (!Array.isArray(library.wrongWords)) {
         library.wrongWords = [];
       }
@@ -477,7 +528,7 @@
     }
 
     function getCurrentLibrary() {
-      return libraries.find((library) => library.id === currentLibraryId) || libraries[0];
+      return libraries.find((library) => library.id === currentLibraryId) || libraries[0] || null;
     }
 
     function getLibraryParts(library) {
@@ -501,7 +552,7 @@
       if (savedLibraries) {
         try {
           const parsedLibraries = JSON.parse(savedLibraries);
-          if (Array.isArray(parsedLibraries) && parsedLibraries.length > 0) {
+          if (Array.isArray(parsedLibraries)) {
             return parsedLibraries.map(normalizeLibrary);
           }
         } catch {
@@ -515,7 +566,7 @@
     function loadCurrentLibraryId() {
       const savedId = localStorage.getItem(CURRENT_LIBRARY_ID_KEY);
       const matchedLibrary = libraries.find((library) => library.id === savedId);
-      return matchedLibrary ? matchedLibrary.id : libraries[0].id;
+      return matchedLibrary ? matchedLibrary.id : (libraries[0]?.id || "");
     }
 
     function createDefaultLibraries() {
@@ -577,7 +628,11 @@
     }
 
     function saveCurrentLibraryId() {
-      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
+      if (currentLibraryId) {
+        localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
+      } else {
+        localStorage.removeItem(CURRENT_LIBRARY_ID_KEY);
+      }
     }
 
     function createLibraryId() {

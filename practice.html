@@ -220,7 +220,8 @@
       } else if (attemptCount === 1) {
         feedbackEl.textContent = "拼写错误，请再试一次";
       } else if (attemptCount === 2) {
-        feedbackEl.textContent = "注意首字母和单词长度";
+        const exampleHint = currentWord.example ? `。例句提示：${createExampleText(currentWord)}` : "";
+        feedbackEl.textContent = `注意首字母和单词长度${exampleHint}`;
       } else {
         feedbackEl.textContent = "还没有拼对，可以先显示答案，再继续输入正确拼写。";
         showAnswerBtn.hidden = false;
