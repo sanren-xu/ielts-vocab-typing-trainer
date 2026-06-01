@@ -53,6 +53,20 @@
           <div><strong id="detailWrongCount">0</strong><small>错词数量</small></div>
         </div>
 
+        <section class="library-overview" aria-label="当前词库详情">
+          <div class="library-overview-main">
+            <span>当前词库详情</span>
+            <h2 id="overviewLibraryName">默认词库</h2>
+            <p id="overviewLibrarySource">来源：未填写来源</p>
+            <strong id="overviewWordCount">0 个单词</strong>
+          </div>
+          <div class="library-preview">
+            <h3>最近单词预览</h3>
+            <ul id="libraryPreviewList"></ul>
+            <p id="libraryPreviewEmpty" class="empty">这个词库还没有单词，可以先录入。</p>
+          </div>
+        </section>
+
         <div class="library-word-head">
           <h2>单词列表</h2>
           <p id="libraryPageMessage" class="library-page-message" role="status"></p>
@@ -89,6 +103,11 @@
     const detailSourceEl = document.querySelector("#detailLibrarySource");
     const detailWordCountEl = document.querySelector("#detailWordCount");
     const detailWrongCountEl = document.querySelector("#detailWrongCount");
+    const overviewNameEl = document.querySelector("#overviewLibraryName");
+    const overviewSourceEl = document.querySelector("#overviewLibrarySource");
+    const overviewWordCountEl = document.querySelector("#overviewWordCount");
+    const previewListEl = document.querySelector("#libraryPreviewList");
+    const previewEmptyEl = document.querySelector("#libraryPreviewEmpty");
     const messageEl = document.querySelector("#libraryPageMessage");
     const newLibraryBtn = document.querySelector("#newLibraryBtn");
     const renameLibraryBtn = document.querySelector("#renameLibraryBtn");
@@ -169,6 +188,10 @@
       detailSourceEl.hidden = !parts.source;
       detailWordCountEl.textContent = words.length;
       detailWrongCountEl.textContent = wrongWords.length;
+      overviewNameEl.textContent = parts.name;
+      overviewSourceEl.textContent = `来源：${parts.source || "未填写来源"}`;
+      overviewWordCountEl.textContent = `${words.length} 个单词`;
+      renderWordPreview(words);
       deleteLibraryBtn.disabled = libraries.length <= 1;
       startPracticeBtn.disabled = words.length === 0;
       wordListEl.innerHTML = "";
@@ -205,6 +228,22 @@
         actions.append(editBtn, deleteBtn);
         item.append(content, actions);
         wordListEl.appendChild(item);
+      });
+    }
+
+    function renderWordPreview(words) {
+      previewListEl.innerHTML = "";
+      previewEmptyEl.hidden = words.length > 0;
+
+      words.slice(-5).reverse().forEach((word) => {
+        const item = document.createElement("li");
+        const english = document.createElement("strong");
+        const chinese = document.createElement("span");
+
+        english.textContent = word.english;
+        chinese.textContent = word.chinese;
+        item.append(english, chinese);
+        previewListEl.appendChild(item);
       });
     }
 

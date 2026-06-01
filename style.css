@@ -1156,6 +1156,84 @@ body.entry-page {
   color: var(--muted);
 }
 
+.library-overview {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.82fr) minmax(0, 1.18fr);
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfdfd;
+}
+
+.library-overview-main {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+
+.library-overview-main span {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.library-overview-main h2 {
+  color: var(--primary-dark);
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.library-overview-main p,
+.library-overview-main strong {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.library-overview-main strong {
+  color: var(--primary-dark);
+}
+
+.library-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.library-preview h3 {
+  margin: 0;
+  color: #1e2a32;
+  font-size: 16px;
+}
+
+.library-preview ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library-preview li {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.2fr);
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(220, 229, 234, 0.9);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.library-preview strong {
+  color: var(--primary-dark);
+  word-break: break-word;
+}
+
+.library-preview span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .library-page-message {
   min-height: 22px;
   color: var(--muted);
@@ -2671,6 +2749,11 @@ body.practice-active #emptyWrongBookText {
 
   .library-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .library-overview,
+  .library-preview li {
+    grid-template-columns: 1fr;
   }
 
   .library-word-item {
