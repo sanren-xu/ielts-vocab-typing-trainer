@@ -553,18 +553,41 @@
       }
 
       return words.filter((word) => {
-        const searchableText = [
-          word.english,
-          word.chinese,
-          word.example
-        ].join(" ").toLowerCase();
-
-        return searchableText.includes(keyword);
+        return matchesEnglishText(word.english, keyword)
+          || matchesChineseText(word.chinese, keyword)
+          || matchesExampleText(word.example, keyword);
       });
     }
 
     function getSearchKeyword() {
       return searchInputEl.value.trim().toLowerCase();
+    }
+
+    function matchesEnglishText(text = "", keyword) {
+      return getEnglishTokens(text).some((token) => token.startsWith(keyword));
+    }
+
+    function matchesChineseText(text = "", keyword) {
+      return String(text).toLowerCase().includes(keyword);
+    }
+
+    function matchesExampleText(text = "", keyword) {
+      if (hasChineseKeyword(keyword)) {
+        return String(text).toLowerCase().includes(keyword);
+      }
+
+      return matchesEnglishText(text, keyword);
+    }
+
+    function getEnglishTokens(text = "") {
+      return String(text)
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean);
+    }
+
+    function hasChineseKeyword(text) {
+      return /[\u3400-\u9fff]/.test(text);
     }
 
     function getCurrentLibrary() {
