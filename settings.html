@@ -31,7 +31,7 @@
         <h2 id="exampleModeTitle">例句显示方式</h2>
       </div>
 
-      <form id="settingsForm" class="settings-options">
+      <form id="exampleSettingsForm" class="settings-options">
         <label class="settings-option">
           <input type="radio" name="exampleMode" value="always">
           <span>
@@ -60,6 +60,33 @@
       <p id="settingsMessage" class="settings-message" role="status"></p>
     </section>
 
+    <section class="settings-card" aria-labelledby="practiceOrderTitle">
+      <div class="settings-card-head">
+        <span>练习设置</span>
+        <h2 id="practiceOrderTitle">练习顺序</h2>
+      </div>
+
+      <form id="orderSettingsForm" class="settings-options">
+        <label class="settings-option">
+          <input type="radio" name="practiceOrder" value="random">
+          <span>
+            <strong>乱序练习（推荐）</strong>
+            <small>每轮练习重新打乱顺序，减少位置记忆。</small>
+          </span>
+        </label>
+
+        <label class="settings-option">
+          <input type="radio" name="practiceOrder" value="sequential">
+          <span>
+            <strong>顺序练习（按录入顺序）</strong>
+            <small>按词库中的录入顺序依次练习。</small>
+          </span>
+        </label>
+      </form>
+
+      <p id="orderSettingsMessage" class="settings-message" role="status"></p>
+    </section>
+
     <section class="settings-card" aria-labelledby="dataManageTitle">
       <div class="settings-card-head">
         <span>本地数据</span>
@@ -85,29 +112,43 @@
     const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
     const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
     const EXAMPLE_MODE_STORAGE_KEY = "ieltsTypingLearnerExampleMode";
+    const PRACTICE_ORDER_STORAGE_KEY = "ieltsTypingLearnerPracticeOrder";
     const DEFAULT_EXAMPLE_MODE = "afterSecondWrong";
+    const DEFAULT_PRACTICE_ORDER = "random";
     const DATA_STORAGE_KEYS = [
       LIBRARIES_STORAGE_KEY,
       CURRENT_LIBRARY_ID_KEY,
-      EXAMPLE_MODE_STORAGE_KEY
+      EXAMPLE_MODE_STORAGE_KEY,
+      PRACTICE_ORDER_STORAGE_KEY
     ];
     const allowedExampleModes = ["always", "afterSecondWrong", "hidden"];
+    const allowedPracticeOrders = ["random", "sequential"];
 
-    const settingsForm = document.querySelector("#settingsForm");
+    const exampleSettingsForm = document.querySelector("#exampleSettingsForm");
     const settingsMessage = document.querySelector("#settingsMessage");
+    const orderSettingsForm = document.querySelector("#orderSettingsForm");
+    const orderSettingsMessage = document.querySelector("#orderSettingsMessage");
     const exportDataBtn = document.querySelector("#exportDataBtn");
     const importDataInput = document.querySelector("#importDataInput");
     const clearDataBtn = document.querySelector("#clearDataBtn");
     const dataMessage = document.querySelector("#dataMessage");
 
     initializeExampleMode();
+    initializePracticeOrder();
 
-    settingsForm.addEventListener("change", (event) => {
+    exampleSettingsForm.addEventListener("change", (event) => {
       if (event.target.name !== "exampleMode") {
         return;
       }
 
       saveExampleMode(event.target.value);
+    });
+    orderSettingsForm.addEventListener("change", (event) => {
+      if (event.target.name !== "practiceOrder") {
+        return;
+      }
+
+      savePracticeOrder(event.target.value);
     });
     exportDataBtn.addEventListener("click", exportBackupData);
     importDataInput.addEventListener("change", importBackupData);
@@ -116,7 +157,17 @@
     function initializeExampleMode() {
       const savedMode = localStorage.getItem(EXAMPLE_MODE_STORAGE_KEY);
       const currentMode = allowedExampleModes.includes(savedMode) ? savedMode : DEFAULT_EXAMPLE_MODE;
-      const currentInput = settingsForm.querySelector(`[value="${currentMode}"]`);
+      const currentInput = exampleSettingsForm.querySelector(`[value="${currentMode}"]`);
+
+      if (currentInput) {
+        currentInput.checked = true;
+      }
+    }
+
+    function initializePracticeOrder() {
+      const savedOrder = localStorage.getItem(PRACTICE_ORDER_STORAGE_KEY);
+      const currentOrder = allowedPracticeOrders.includes(savedOrder) ? savedOrder : DEFAULT_PRACTICE_ORDER;
+      const currentInput = orderSettingsForm.querySelector(`[value="${currentOrder}"]`);
 
       if (currentInput) {
         currentInput.checked = true;
@@ -132,9 +183,23 @@
       showMessage("设置已保存");
     }
 
+    function savePracticeOrder(order) {
+      if (!allowedPracticeOrders.includes(order)) {
+        return;
+      }
+
+      localStorage.setItem(PRACTICE_ORDER_STORAGE_KEY, order);
+      showOrderMessage("设置已保存");
+    }
+
     function showMessage(text) {
       settingsMessage.textContent = text;
       settingsMessage.className = "settings-message success";
+    }
+
+    function showOrderMessage(text) {
+      orderSettingsMessage.textContent = text;
+      orderSettingsMessage.className = "settings-message success";
     }
 
     function exportBackupData() {
@@ -192,6 +257,7 @@
 
           restoreProjectData(backup.data);
           initializeExampleMode();
+          initializePracticeOrder();
           showDataMessage("导入成功，请刷新页面或返回词库查看");
         } catch {
           showDataMessage("备份文件格式不正确", "error");
@@ -239,6 +305,7 @@
         localStorage.removeItem(key);
       });
       initializeExampleMode();
+      initializePracticeOrder();
       showDataMessage("本地数据已清空");
     }
 

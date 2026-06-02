@@ -105,6 +105,7 @@
     const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
     const LEGACY_WORDS_STORAGE_KEY = "ieltsTypingLearnerWords";
     const EXAMPLE_MODE_STORAGE_KEY = "ieltsTypingLearnerExampleMode";
+    const PRACTICE_ORDER_STORAGE_KEY = "ieltsTypingLearnerPracticeOrder";
 
     const libraryNameEl = document.querySelector("#practiceLibraryName");
     const progressEl = document.querySelector("#practiceProgress");
@@ -165,7 +166,7 @@
     function startPractice(words, mode) {
       practiceMode = mode;
       sourceWords = words.map((word) => ({ ...word }));
-      practiceQueue = sourceWords.map((word) => ({ ...word }));
+      practiceQueue = buildPracticeQueue(sourceWords);
       currentIndex = 0;
       currentWord = null;
       attemptCount = 0;
@@ -183,6 +184,32 @@
       }
 
       pickCurrentWord();
+    }
+
+    function buildPracticeQueue(words) {
+      const queue = words.map((word) => ({ ...word }));
+
+      if (getPracticeOrder() === "sequential") {
+        return queue;
+      }
+
+      return shuffleWords(queue);
+    }
+
+    function getPracticeOrder() {
+      const savedOrder = localStorage.getItem(PRACTICE_ORDER_STORAGE_KEY);
+      return savedOrder === "sequential" ? "sequential" : "random";
+    }
+
+    function shuffleWords(words) {
+      const shuffledWords = [...words];
+
+      for (let index = shuffledWords.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [shuffledWords[index], shuffledWords[randomIndex]] = [shuffledWords[randomIndex], shuffledWords[index]];
+      }
+
+      return shuffledWords;
     }
 
     function pickCurrentWord() {
