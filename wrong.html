@@ -17,21 +17,34 @@
       <div aria-hidden="true"></div>
     </header>
 
-    <section class="library-detail-card wrong-card" aria-label="错词复习">
-      <div class="library-detail-header">
-        <div>
-          <span>当前词库</span>
-          <h2 id="wrongLibraryName">默认词库</h2>
-          <p id="wrongPageMessage" class="library-page-message" role="status"></p>
+    <section class="library-workspace wrong-workspace" aria-label="错词复习">
+      <aside class="library-sidebar-card">
+        <div class="library-card-heading">
+          <div>
+            <span>词库目录</span>
+            <h2>全部词库</h2>
+          </div>
         </div>
-      </div>
 
-      <div class="library-metrics wrong-metrics">
-        <div><strong id="wrongWordCount">0</strong><small>错词数量</small></div>
-      </div>
+        <ul id="wrongLibraryList" class="library-page-list"></ul>
+      </aside>
 
-      <ul id="wrongWordList" class="library-word-list wrong-word-list"></ul>
-      <p id="wrongEmptyText" class="entry-empty-text">当前词库还没有错词。</p>
+      <section class="library-detail-card wrong-card" aria-label="当前词库错词">
+        <div class="library-detail-header">
+          <div>
+            <span>当前词库</span>
+            <h2 id="wrongLibraryName">默认词库</h2>
+            <p id="wrongPageMessage" class="library-page-message" role="status"></p>
+          </div>
+        </div>
+
+        <div class="library-metrics wrong-metrics">
+          <div><strong id="wrongWordCount">0</strong><small>错词数量</small></div>
+        </div>
+
+        <ul id="wrongWordList" class="library-word-list wrong-word-list"></ul>
+        <p id="wrongEmptyText" class="entry-empty-text">当前词库暂无错词，完成练习后这里会显示需要复习的单词。</p>
+      </section>
     </section>
   </main>
 
@@ -39,6 +52,7 @@
     const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
     const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
 
+    const libraryListEl = document.querySelector("#wrongLibraryList");
     const libraryNameEl = document.querySelector("#wrongLibraryName");
     const wrongCountEl = document.querySelector("#wrongWordCount");
     const wrongListEl = document.querySelector("#wrongWordList");
@@ -46,14 +60,45 @@
     const messageEl = document.querySelector("#wrongPageMessage");
 
     let libraries = loadLibraries();
+    let currentLibraryId = loadCurrentLibraryId();
     let currentLibrary = getCurrentLibrary();
 
-    renderWrongWords();
+    renderPage();
+
+    function renderPage() {
+      currentLibrary = getCurrentLibrary();
+      currentLibraryId = currentLibrary ? currentLibrary.id : "";
+      renderLibraryList();
+      renderWrongWords();
+      saveCurrentLibraryId();
+    }
+
+    function renderLibraryList() {
+      libraryListEl.innerHTML = "";
+
+      libraries.forEach((library) => {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        const title = document.createElement("strong");
+        const meta = document.createElement("small");
+
+        item.className = library.id === currentLibraryId ? "active" : "";
+        button.type = "button";
+        button.className = "library-page-item";
+        button.addEventListener("click", () => switchLibrary(library.id));
+        title.textContent = library.name;
+        meta.textContent = `${getWords(library).length} 个单词 · ${getWrongWords(library).length} 个错词`;
+
+        button.append(title, meta);
+        item.append(button);
+        libraryListEl.appendChild(item);
+      });
+    }
 
     function renderWrongWords() {
       const wrongWords = getWrongWords(currentLibrary);
 
-      libraryNameEl.textContent = currentLibrary.name;
+      libraryNameEl.textContent = currentLibrary ? currentLibrary.name : "还没有词库";
       wrongCountEl.textContent = wrongWords.length;
       wrongListEl.innerHTML = "";
       emptyTextEl.hidden = wrongWords.length > 0;
@@ -97,6 +142,20 @@
       });
     }
 
+    function switchLibrary(libraryId) {
+      const matchedLibrary = libraries.find((library) => library.id === libraryId);
+
+      if (!matchedLibrary) {
+        return;
+      }
+
+      currentLibraryId = matchedLibrary.id;
+      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
+      messageEl.textContent = "";
+      messageEl.className = "library-page-message";
+      renderPage();
+    }
+
     function removeWrongWord(index) {
       const wrongWords = getWrongWords(currentLibrary);
       const removedWord = wrongWords[index];
@@ -109,7 +168,7 @@
       currentLibrary.wrongWords = wrongWords;
       saveLibraries();
       showMessage(`已将 ${removedWord.english || "该单词"} 移出错词。`, "success");
-      renderWrongWords();
+      renderPage();
     }
 
     function showMessage(text, type) {
@@ -125,16 +184,23 @@
       return library.wrongWords;
     }
 
+    function getWords(library) {
+      if (!library || !Array.isArray(library.words)) {
+        return [];
+      }
+
+      return library.words;
+    }
+
     function getCurrentLibrary() {
-      const savedId = localStorage.getItem(CURRENT_LIBRARY_ID_KEY);
-      const matchedLibrary = libraries.find((library) => library.id === savedId);
+      const matchedLibrary = libraries.find((library) => library.id === currentLibraryId);
 
       if (matchedLibrary) {
         return matchedLibrary;
       }
 
       if (libraries.length > 0) {
-        localStorage.setItem(CURRENT_LIBRARY_ID_KEY, libraries[0].id);
+        currentLibraryId = libraries[0].id;
         return libraries[0];
       }
 
@@ -144,6 +210,10 @@
         words: [],
         wrongWords: []
       };
+    }
+
+    function loadCurrentLibraryId() {
+      return localStorage.getItem(CURRENT_LIBRARY_ID_KEY) || "";
     }
 
     function loadLibraries() {
@@ -188,6 +258,12 @@
 
     function saveLibraries() {
       localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+    }
+
+    function saveCurrentLibraryId() {
+      if (currentLibraryId) {
+        localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
+      }
     }
   </script>
 </body>
