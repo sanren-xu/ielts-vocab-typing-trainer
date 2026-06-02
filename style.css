@@ -97,6 +97,7 @@ body.home-page {
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 12px 28px rgba(33, 50, 62, 0.09);
   cursor: pointer;
+  text-decoration: none;
 }
 
 .home-nav-btn span {
@@ -1358,6 +1359,110 @@ body.entry-page {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* Settings page */
+.settings-shell {
+  width: min(920px, calc(100% - 56px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 28px 0 40px;
+  display: grid;
+  align-content: start;
+  gap: 28px;
+}
+
+.settings-hero {
+  display: grid;
+  gap: 12px;
+  padding-top: 28px;
+  text-align: center;
+}
+
+.settings-hero h1 {
+  color: #1c2b35;
+  font-size: clamp(40px, 5vw, 58px);
+  line-height: 1.1;
+}
+
+.settings-hero p {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.settings-card {
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  border: 1px solid rgba(220, 229, 234, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.settings-card-head span {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.settings-card-head h2 {
+  margin-top: 6px;
+  color: #1e2a32;
+  font-size: 26px;
+}
+
+.settings-options {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-option {
+  min-height: 86px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.settings-option:has(input:checked) {
+  border-color: var(--primary);
+  background: #e8f2f1;
+}
+
+.settings-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.settings-option strong {
+  display: block;
+  color: var(--primary-dark);
+  font-size: 18px;
+}
+
+.settings-option small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.settings-message {
+  min-height: 22px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.settings-message.success {
+  color: var(--success);
 }
 
 .bulk-page {

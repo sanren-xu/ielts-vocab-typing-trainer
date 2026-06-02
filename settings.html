@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置 - IELTS Typing Learner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page settings-page">
+  <main class="settings-shell">
+    <header class="home-nav">
+      <a class="home-brand" href="index.html" aria-label="返回首页">
+        <span class="home-logo">A</span>
+        <strong>IELTS Typing Learner</strong>
+      </a>
+
+      <a class="home-nav-btn" href="index.html" aria-label="返回首页">
+        <span aria-hidden="true">←</span>
+        返回首页
+      </a>
+    </header>
+
+    <section class="settings-hero" aria-labelledby="settingsTitle">
+      <h1 id="settingsTitle">设置</h1>
+      <p>这些设置目前保存在本机浏览器中。</p>
+    </section>
+
+    <section class="settings-card" aria-labelledby="exampleModeTitle">
+      <div class="settings-card-head">
+        <span>练习设置</span>
+        <h2 id="exampleModeTitle">例句显示方式</h2>
+      </div>
+
+      <form id="settingsForm" class="settings-options">
+        <label class="settings-option">
+          <input type="radio" name="exampleMode" value="always">
+          <span>
+            <strong>一直显示例句</strong>
+            <small>进入每道题时立即显示对应例句。</small>
+          </span>
+        </label>
+
+        <label class="settings-option">
+          <input type="radio" name="exampleMode" value="afterSecondWrong">
+          <span>
+            <strong>答错第二次后显示例句（推荐）</strong>
+            <small>先独立回忆，连续答错后再给例句提示。</small>
+          </span>
+        </label>
+
+        <label class="settings-option">
+          <input type="radio" name="exampleMode" value="hidden">
+          <span>
+            <strong>不显示例句</strong>
+            <small>练习时始终隐藏例句提示。</small>
+          </span>
+        </label>
+      </form>
+
+      <p id="settingsMessage" class="settings-message" role="status"></p>
+    </section>
+  </main>
+
+  <script>
+    const EXAMPLE_MODE_STORAGE_KEY = "ieltsTypingLearnerExampleMode";
+    const DEFAULT_EXAMPLE_MODE = "afterSecondWrong";
+    const allowedExampleModes = ["always", "afterSecondWrong", "hidden"];
+
+    const settingsForm = document.querySelector("#settingsForm");
+    const settingsMessage = document.querySelector("#settingsMessage");
+
+    initializeExampleMode();
+
+    settingsForm.addEventListener("change", (event) => {
+      if (event.target.name !== "exampleMode") {
+        return;
+      }
+
+      saveExampleMode(event.target.value);
+    });
+
+    function initializeExampleMode() {
+      const savedMode = localStorage.getItem(EXAMPLE_MODE_STORAGE_KEY);
+      const currentMode = allowedExampleModes.includes(savedMode) ? savedMode : DEFAULT_EXAMPLE_MODE;
+      const currentInput = settingsForm.querySelector(`[value="${currentMode}"]`);
+
+      if (currentInput) {
+        currentInput.checked = true;
+      }
+    }
+
+    function saveExampleMode(mode) {
+      if (!allowedExampleModes.includes(mode)) {
+        return;
+      }
+
+      localStorage.setItem(EXAMPLE_MODE_STORAGE_KEY, mode);
+      showMessage("设置已保存");
+    }
+
+    function showMessage(text) {
+      settingsMessage.textContent = text;
+      settingsMessage.className = "settings-message success";
+    }
+  </script>
+</body>
+</html>
