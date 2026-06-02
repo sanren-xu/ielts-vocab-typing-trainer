@@ -1281,6 +1281,24 @@ body.entry-page {
   color: var(--danger);
 }
 
+.library-search-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.library-search-field span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.library-search-field input {
+  min-height: 46px;
+  border-color: #cfe4e0;
+  background: rgba(251, 253, 253, 0.9);
+}
+
 .library-word-list {
   display: grid;
   align-content: start;

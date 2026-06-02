@@ -72,6 +72,10 @@
           <p id="libraryPageMessage" class="library-page-message" role="status"></p>
         </div>
 
+        <label class="library-search-field">
+          <span>筛选当前词库</span>
+          <input id="librarySearchInput" type="search" autocomplete="off" placeholder="搜索英文、中文或例句">
+        </label>
         <ul id="libraryWordList" class="library-word-list"></ul>
         <p id="libraryEmptyText" class="entry-empty-text">当前词库还没有单词。可以先去“录入今日生词”页面添加。</p>
       </section>
@@ -99,6 +103,7 @@
     const libraryListEl = document.querySelector("#libraryPageList");
     const wordListEl = document.querySelector("#libraryWordList");
     const emptyTextEl = document.querySelector("#libraryEmptyText");
+    const searchInputEl = document.querySelector("#librarySearchInput");
     const detailNameEl = document.querySelector("#detailLibraryName");
     const detailSourceEl = document.querySelector("#detailLibrarySource");
     const detailWordCountEl = document.querySelector("#detailWordCount");
@@ -134,6 +139,9 @@
     deleteLibraryBtn.addEventListener("click", deleteCurrentLibrary);
     inputLibraryBtn.addEventListener("click", openInputPage);
     startPracticeBtn.addEventListener("click", startPractice);
+    searchInputEl.addEventListener("input", () => {
+      renderLibraryDetail(getCurrentLibrary());
+    });
     modalCancel.addEventListener("click", closeModal);
     modalBackdrop.addEventListener("click", (event) => {
       if (event.target === modalBackdrop) {
@@ -187,7 +195,9 @@
 
       const parts = getLibraryParts(library);
       const words = getWords(library);
+      const filteredWords = getFilteredWords(words);
       const wrongWords = getWrongWords(library);
+      const hasSearch = getSearchKeyword().length > 0;
 
       detailNameEl.textContent = parts.name;
       detailSourceEl.textContent = `来源：${parts.source}`;
@@ -202,41 +212,13 @@
       deleteLibraryBtn.disabled = false;
       inputLibraryBtn.disabled = false;
       startPracticeBtn.disabled = words.length === 0;
+      searchInputEl.disabled = words.length === 0;
       wordListEl.innerHTML = "";
-      emptyTextEl.textContent = "当前词库还没有单词。可以先去“录入今日生词”页面添加。";
-      emptyTextEl.hidden = words.length > 0;
+      emptyTextEl.textContent = hasSearch ? "没有找到相关单词" : "当前词库还没有单词。可以先去“录入今日生词”页面添加。";
+      emptyTextEl.hidden = filteredWords.length > 0;
 
-      words.forEach((word) => {
-        const item = document.createElement("li");
-        const content = document.createElement("div");
-        const english = document.createElement("strong");
-        const chinese = document.createElement("span");
-        const example = document.createElement("p");
-        const actions = document.createElement("div");
-        const editBtn = document.createElement("button");
-        const deleteBtn = document.createElement("button");
-
-        item.className = "library-word-item";
-        content.className = "library-word-content";
-        english.textContent = word.english;
-        chinese.textContent = word.chinese;
-        example.textContent = word.example || "";
-        example.hidden = !word.example;
-
-        actions.className = "library-word-actions";
-        editBtn.type = "button";
-        editBtn.textContent = "编辑";
-        editBtn.className = "library-small-btn";
-        editBtn.addEventListener("click", () => editWord(word.english));
-        deleteBtn.type = "button";
-        deleteBtn.textContent = "删除";
-        deleteBtn.className = "library-small-btn library-danger-btn";
-        deleteBtn.addEventListener("click", () => deleteWord(word.english));
-
-        content.append(english, chinese, example);
-        actions.append(editBtn, deleteBtn);
-        item.append(content, actions);
-        wordListEl.appendChild(item);
+      filteredWords.forEach((word) => {
+        renderWordItem(word);
       });
     }
 
@@ -250,6 +232,8 @@
       overviewWordCountEl.textContent = "0 个单词";
       renderWordPreview([]);
       wordListEl.innerHTML = "";
+      searchInputEl.value = "";
+      searchInputEl.disabled = true;
       emptyTextEl.textContent = "还没有词库。请先点击左侧“新建词库”。";
       emptyTextEl.hidden = false;
       renameLibraryBtn.disabled = true;
@@ -272,6 +256,39 @@
         item.append(english, chinese);
         previewListEl.appendChild(item);
       });
+    }
+
+    function renderWordItem(word) {
+      const item = document.createElement("li");
+      const content = document.createElement("div");
+      const english = document.createElement("strong");
+      const chinese = document.createElement("span");
+      const example = document.createElement("p");
+      const actions = document.createElement("div");
+      const editBtn = document.createElement("button");
+      const deleteBtn = document.createElement("button");
+
+      item.className = "library-word-item";
+      content.className = "library-word-content";
+      english.textContent = word.english;
+      chinese.textContent = word.chinese;
+      example.textContent = word.example || "";
+      example.hidden = !word.example;
+
+      actions.className = "library-word-actions";
+      editBtn.type = "button";
+      editBtn.textContent = "编辑";
+      editBtn.className = "library-small-btn";
+      editBtn.addEventListener("click", () => editWord(word.english));
+      deleteBtn.type = "button";
+      deleteBtn.textContent = "删除";
+      deleteBtn.className = "library-small-btn library-danger-btn";
+      deleteBtn.addEventListener("click", () => deleteWord(word.english));
+
+      content.append(english, chinese, example);
+      actions.append(editBtn, deleteBtn);
+      item.append(content, actions);
+      wordListEl.appendChild(item);
     }
 
     async function createLibrary() {
@@ -457,6 +474,7 @@
 
     function switchLibrary(libraryId) {
       currentLibraryId = libraryId;
+      searchInputEl.value = "";
       renderPage();
       showMessage("");
     }
@@ -525,6 +543,28 @@
       }
 
       return library.wrongWords;
+    }
+
+    function getFilteredWords(words) {
+      const keyword = getSearchKeyword();
+
+      if (!keyword) {
+        return words;
+      }
+
+      return words.filter((word) => {
+        const searchableText = [
+          word.english,
+          word.chinese,
+          word.example
+        ].join(" ").toLowerCase();
+
+        return searchableText.includes(keyword);
+      });
+    }
+
+    function getSearchKeyword() {
+      return searchInputEl.value.trim().toLowerCase();
     }
 
     function getCurrentLibrary() {
