@@ -1348,6 +1348,43 @@ body.entry-page {
   gap: 8px;
 }
 
+.wrong-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.wrong-card {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+
+.wrong-metrics {
+  grid-template-columns: minmax(0, 160px);
+}
+
+.wrong-word-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wrong-word-meta small {
+  padding: 5px 8px;
+  border-radius: 8px;
+  color: var(--primary-dark);
+  background: #e8f2f1;
+  font-weight: 800;
+}
+
+.wrong-word-actions {
+  align-items: flex-start;
+}
+
+.wrong-word-actions .practice-page-btn {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
 .library-modal-backdrop {
   position: fixed;
   inset: 0;

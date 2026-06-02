@@ -126,9 +126,10 @@
     const examplePane = document.querySelector("#practiceExamplePane");
     const exampleEl = document.querySelector("#practiceExample");
 
+    const initialPracticeMode = new URLSearchParams(window.location.search).get("mode") === "wrong" ? "wrong" : "all";
     let libraries = loadLibraries();
     let currentLibrary = getCurrentLibrary();
-    let sourceWords = currentLibrary.words || [];
+    let sourceWords = initialPracticeMode === "wrong" ? getCurrentWrongWords() : currentLibrary.words || [];
     let practiceQueue = [];
     let practiceMode = "all";
     let exampleMode = getExampleMode();
@@ -140,11 +141,18 @@
     let roundWrongWords = new Set();
 
     libraryNameEl.textContent = currentLibrary.name;
-    startPractice(sourceWords, "all");
+    startPractice(sourceWords, initialPracticeMode);
 
     submitBtn.addEventListener("click", checkAnswer);
     showAnswerBtn.addEventListener("click", revealAnswer);
-    practiceAgainBtn.addEventListener("click", () => startPractice(currentLibrary.words || [], "all"));
+    practiceAgainBtn.addEventListener("click", () => {
+      if (practiceMode === "wrong") {
+        startPractice(getCurrentWrongWords(), "wrong");
+        return;
+      }
+
+      startPractice(currentLibrary.words || [], "all");
+    });
     wrongOnlyBtn.addEventListener("click", () => {
       const wrongWords = getCurrentWrongWords();
 
