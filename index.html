@@ -6,189 +6,63 @@
   <title>雅思自定义生词拼写练习器</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <main class="app">
-    <header class="top">
-      <p class="eyebrow">自定义词库练习</p>
-      <h1>雅思自定义生词拼写练习器</h1>
-      <p class="intro">录入今天学到的生词，保存成自己的词库，再用中文意思反向练习英文拼写。</p>
+<body class="home-page">
+  <main class="home-shell">
+    <header class="home-nav">
+      <a class="home-brand" href="index.html" aria-label="返回首页">
+        <span class="home-logo">A</span>
+        <strong>IELTS Typing Learner</strong>
+      </a>
+
+      <div class="home-nav-actions">
+        <button class="home-nav-btn" type="button" aria-label="个人中心">
+          <span aria-hidden="true">♡</span>
+          个人中心
+        </button>
+        <a class="home-nav-btn" href="settings.html" aria-label="设置">
+          <span aria-hidden="true">⚙</span>
+          设置
+        </a>
+      </div>
     </header>
 
-    <div class="workspace">
-      <aside class="panel library-panel">
-        <div class="section-title compact-title">
+    <section class="home-hero">
+      <h1>雅思自定义生词拼写练习器</h1>
+      <p class="home-lead">简洁整理生词，创建属于自己的单词库，再用拼写练习把它们真正记住。</p>
+      <p class="home-tagline"><span aria-hidden="true">▯</span> 先录入，再练习，记得更牢</p>
+    </section>
+
+    <section class="home-actions" aria-label="首页入口">
+      <a class="home-main-card" href="input.html?mode=new">
+        <span class="home-main-icon" aria-hidden="true">＋</span>
+        <h2>录入今日生词</h2>
+        <p>整理今天遇到的新词，建立你的个人单词库</p>
+      </a>
+
+      <div class="home-secondary-grid">
+        <a class="home-secondary-card" href="library.html">
+          <span class="home-secondary-icon" aria-hidden="true">▦</span>
           <div>
-            <span class="step">词库管理</span>
             <h2>我的词库</h2>
+            <p>查看和管理自己的单词库</p>
           </div>
-        </div>
+          <strong aria-hidden="true">›</strong>
+        </a>
 
-        <div class="library-create">
-          <label for="libraryNameInput">新词库名称</label>
-          <input id="libraryNameInput" type="text" placeholder="剑雅18 Test 1 Passage 1">
-          <button id="createLibraryBtn" class="primary-btn">创建词库</button>
-        </div>
-
-        <div class="library-transfer">
-          <button id="exportCurrentBtn" class="ghost-btn" type="button">导出当前词库</button>
-          <button id="exportAllBtn" class="ghost-btn" type="button">导出全部词库</button>
-          <button id="importLibraryBtn" class="ghost-btn" type="button">导入词库</button>
-          <input id="importFileInput" type="file" accept="application/json,.json" hidden>
-        </div>
-
-        <ul id="libraryList" class="library-list"></ul>
-      </aside>
-
-      <div class="content-stack">
-        <div class="top-workbench">
-          <section class="panel list-panel">
-            <div class="section-title compact-title">
-              <div>
-                <span class="step">当前词库</span>
-                <h2><span id="activeLibraryName">默认词库</span></h2>
-              </div>
-            </div>
-
-            <div class="library-summary">
-              <strong>共 <span id="totalCount">0</span> 个单词</strong>
-              <div class="actions inline-actions">
-                <button id="startBtn" class="primary-btn">开始练习</button>
-                <button id="wrongOnlyBtn" class="ghost-btn">只练错词</button>
-                <button id="clearLibraryBtn" class="danger-btn">清空当前词库</button>
-              </div>
-            </div>
-
-            <div class="word-list-shell">
-              <ul id="wordList" class="word-list"></ul>
-              <p id="emptyText" class="empty">当前词库还没有单词。先把今天学到的生词放进来吧。</p>
-            </div>
-          </section>
-
-          <section class="panel input-panel">
-            <div class="section-title compact-title">
-              <div>
-                <span class="step">批量添加</span>
-                <h2>录入今日生词</h2>
-              </div>
-            </div>
-
-            <div class="current-library-note">添加到：<strong id="activeLibraryNameForInput">默认词库</strong></div>
-
-            <div class="quick-add">
-              <label for="quickEnglishInput">英文单词</label>
-              <input id="quickEnglishInput" type="text" autocomplete="off" placeholder="evidence">
-              <label for="quickChineseInput">中文意思</label>
-              <input id="quickChineseInput" type="text" autocomplete="off" placeholder="证据；根据">
-              <button id="quickAddBtn" class="primary-btn" type="button">快速添加</button>
-            </div>
-
-            <textarea id="wordInput" spellcheck="false" placeholder="evidence - 证据；根据
-sustainable - 可持续的
-estimate - 估计"></textarea>
-
-            <div class="actions">
-              <button id="generateBtn" class="primary-btn">添加到当前词库</button>
-              <button id="clearInputBtn" class="ghost-btn">清空输入</button>
-            </div>
-            <p id="inputMessage" class="message"></p>
-          </section>
-        </div>
-
-        <div class="practice-workbench">
-          <section id="practiceSection" class="panel practice-panel" hidden>
-            <div class="section-title compact-title">
-              <div>
-                <span class="step">拼写练习</span>
-                <h2>根据中文写英文</h2>
-              </div>
-            </div>
-
-            <div class="practice-card">
-              <div class="practice-progress">
-                <span>第 <strong id="roundCount">0</strong> 轮</span>
-                <span><strong id="progressCount">0 / 0</strong></span>
-              </div>
-
-              <div class="meaning-box">
-                <span>中文意思</span>
-                <strong id="meaningText">请先点击开始练习</strong>
-              </div>
-              <div class="hint-box">
-                <span>首字母提示</span>
-                <strong id="hintText">_</strong>
-              </div>
-
-              <label for="answerInput">你的拼写</label>
-              <div class="answer-row">
-                <input id="answerInput" type="text" autocomplete="off" placeholder="输入英文单词">
-                <button id="submitBtn" class="primary-btn">提交</button>
-              </div>
-
-              <p id="feedbackText" class="feedback">请输入这个单词的完整英文拼写。</p>
-              <button id="showAnswerBtn" class="ghost-btn answer-reveal-btn" hidden>查看答案</button>
-
-              <div id="roundResult" class="round-result" hidden>
-                <h3>本轮完成</h3>
-                <div class="round-result-grid">
-                  <div><strong id="roundTotalCount">0</strong><small>本轮总词数</small></div>
-                  <div><strong id="roundCorrectCount">0</strong><small>正确次数</small></div>
-                  <div><strong id="roundWrongCount">0</strong><small>错误次数</small></div>
-                  <div><strong id="roundWrongWordCount">0</strong><small>错词数量</small></div>
-                </div>
-                <div class="actions">
-                  <button id="practiceAgainBtn" class="primary-btn">再练一轮</button>
-                  <button id="practiceWrongAgainBtn" class="ghost-btn">只练错词</button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="panel stats-panel">
-            <div class="section-title compact-title">
-              <div>
-                <span class="step">练习统计</span>
-                <h2>本次练习</h2>
-              </div>
-            </div>
-
-            <div class="scoreboard">
-              <div><span id="correctCount">0</span><small>正确</small></div>
-              <div><span id="wrongCount">0</span><small>错误</small></div>
-              <div><span id="doneCount">0</span><small>已练习</small></div>
-            </div>
-
-            <div class="actions">
-              <button id="resetStatsBtn" class="ghost-btn">重置统计</button>
-            </div>
-
-            <div class="wrong-book">
-              <div class="wrong-book-title">
-                <h3>错词本</h3>
-                <span id="wrongBookCount">0 个错词</span>
-                <button id="wrongBookToggleBtn" class="ghost-btn wrong-book-toggle" type="button">查看错词本</button>
-              </div>
-              <ul id="wrongBookList" class="wrong-book-list"></ul>
-              <p id="emptyWrongBookText" class="empty">当前词库暂无错词。</p>
-            </div>
-          </section>
-        </div>
+        <a class="home-secondary-card accent-card" href="wrong.html">
+          <span class="home-secondary-icon" aria-hidden="true">◇</span>
+          <div>
+            <h2>错词复习</h2>
+            <p>集中复习拼写错误的单词</p>
+          </div>
+          <strong aria-hidden="true">›</strong>
+        </a>
       </div>
-    </div>
+    </section>
+
+    <footer class="home-footer">
+      数据保存在本地浏览器，可通过导入/导出备份。
+    </footer>
   </main>
-
-  <div id="appModal" class="modal-backdrop" hidden>
-    <form id="modalDialog" class="modal-dialog">
-      <h2 id="modalTitle">确认操作</h2>
-      <p id="modalDescription">请确认是否继续。</p>
-      <div id="modalFields" class="modal-fields"></div>
-      <p id="modalError" class="modal-error" hidden></p>
-      <div class="modal-actions">
-        <button id="modalCancelBtn" class="ghost-btn" type="button">取消</button>
-        <button id="modalConfirmBtn" class="primary-btn" type="submit">确认</button>
-      </div>
-    </form>
-  </div>
-
-  <script src="script.js"></script>
 </body>
 </html>

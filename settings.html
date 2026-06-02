@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置 - IELTS Typing Learner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page settings-page">
+  <main class="settings-shell">
+    <header class="home-nav">
+      <a class="home-brand" href="index.html" aria-label="返回首页">
+        <span class="home-logo">A</span>
+        <strong>IELTS Typing Learner</strong>
+      </a>
+
+      <a class="home-nav-btn" href="index.html" aria-label="返回首页">
+        <span aria-hidden="true">←</span>
+        返回首页
+      </a>
+    </header>
+
+    <section class="settings-hero" aria-labelledby="settingsTitle">
+      <h1 id="settingsTitle">设置</h1>
+      <p>这些设置目前保存在本机浏览器中。</p>
+    </section>
+
+    <section class="settings-card" aria-labelledby="exampleModeTitle">
+      <div class="settings-card-head">
+        <span>练习设置</span>
+        <h2 id="exampleModeTitle">例句显示方式</h2>
+      </div>
+
+      <form id="exampleSettingsForm" class="settings-options">
+        <label class="settings-option">
+          <input type="radio" name="exampleMode" value="always">
+          <span>
+            <strong>一直显示例句</strong>
+            <small>进入每道题时立即显示对应例句。</small>
+          </span>
+        </label>
+
+        <label class="settings-option">
+          <input type="radio" name="exampleMode" value="afterSecondWrong">
+          <span>
+            <strong>答错第二次后显示例句（推荐）</strong>
+            <small>先独立回忆，连续答错后再给例句提示。</small>
+          </span>
+        </label>
+
+        <label class="settings-option">
+          <input type="radio" name="exampleMode" value="hidden">
+          <span>
+            <strong>不显示例句</strong>
+            <small>练习时始终隐藏例句提示。</small>
+          </span>
+        </label>
+      </form>
+
+      <p id="settingsMessage" class="settings-message" role="status"></p>
+    </section>
+
+    <section class="settings-card" aria-labelledby="practiceOrderTitle">
+      <div class="settings-card-head">
+        <span>练习设置</span>
+        <h2 id="practiceOrderTitle">练习顺序</h2>
+      </div>
+
+      <form id="orderSettingsForm" class="settings-options">
+        <label class="settings-option">
+          <input type="radio" name="practiceOrder" value="random">
+          <span>
+            <strong>乱序练习（推荐）</strong>
+            <small>每轮练习重新打乱顺序，减少位置记忆。</small>
+          </span>
+        </label>
+
+        <label class="settings-option">
+          <input type="radio" name="practiceOrder" value="sequential">
+          <span>
+            <strong>顺序练习（按录入顺序）</strong>
+            <small>按词库中的录入顺序依次练习。</small>
+          </span>
+        </label>
+      </form>
+
+      <p id="orderSettingsMessage" class="settings-message" role="status"></p>
+    </section>
+
+    <section class="settings-card" aria-labelledby="dataManageTitle">
+      <div class="settings-card-head">
+        <span>本地数据</span>
+        <h2 id="dataManageTitle">数据管理</h2>
+      </div>
+
+      <p class="settings-note">导出、导入或清空本机浏览器中的词库和练习设置。</p>
+
+      <div class="settings-data-actions">
+        <button id="exportDataBtn" class="practice-page-btn practice-primary-btn" type="button">导出数据</button>
+        <label class="practice-page-btn practice-ghost-btn settings-import-btn">
+          导入数据
+          <input id="importDataInput" type="file" accept="application/json,.json">
+        </label>
+        <button id="clearDataBtn" class="practice-page-btn library-danger-btn" type="button">清空本地数据</button>
+      </div>
+
+      <p id="dataMessage" class="settings-message" role="status"></p>
+    </section>
+  </main>
+
+  <script>
+    const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
+    const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
+    const EXAMPLE_MODE_STORAGE_KEY = "ieltsTypingLearnerExampleMode";
+    const PRACTICE_ORDER_STORAGE_KEY = "ieltsTypingLearnerPracticeOrder";
+    const DEFAULT_EXAMPLE_MODE = "afterSecondWrong";
+    const DEFAULT_PRACTICE_ORDER = "random";
+    const DATA_STORAGE_KEYS = [
+      LIBRARIES_STORAGE_KEY,
+      CURRENT_LIBRARY_ID_KEY,
+      EXAMPLE_MODE_STORAGE_KEY,
+      PRACTICE_ORDER_STORAGE_KEY
+    ];
+    const allowedExampleModes = ["always", "afterSecondWrong", "hidden"];
+    const allowedPracticeOrders = ["random", "sequential"];
+
+    const exampleSettingsForm = document.querySelector("#exampleSettingsForm");
+    const settingsMessage = document.querySelector("#settingsMessage");
+    const orderSettingsForm = document.querySelector("#orderSettingsForm");
+    const orderSettingsMessage = document.querySelector("#orderSettingsMessage");
+    const exportDataBtn = document.querySelector("#exportDataBtn");
+    const importDataInput = document.querySelector("#importDataInput");
+    const clearDataBtn = document.querySelector("#clearDataBtn");
+    const dataMessage = document.querySelector("#dataMessage");
+
+    initializeExampleMode();
+    initializePracticeOrder();
+
+    exampleSettingsForm.addEventListener("change", (event) => {
+      if (event.target.name !== "exampleMode") {
+        return;
+      }
+
+      saveExampleMode(event.target.value);
+    });
+    orderSettingsForm.addEventListener("change", (event) => {
+      if (event.target.name !== "practiceOrder") {
+        return;
+      }
+
+      savePracticeOrder(event.target.value);
+    });
+    exportDataBtn.addEventListener("click", exportBackupData);
+    importDataInput.addEventListener("change", importBackupData);
+    clearDataBtn.addEventListener("click", clearLocalData);
+
+    function initializeExampleMode() {
+      const savedMode = localStorage.getItem(EXAMPLE_MODE_STORAGE_KEY);
+      const currentMode = allowedExampleModes.includes(savedMode) ? savedMode : DEFAULT_EXAMPLE_MODE;
+      const currentInput = exampleSettingsForm.querySelector(`[value="${currentMode}"]`);
+
+      if (currentInput) {
+        currentInput.checked = true;
+      }
+    }
+
+    function initializePracticeOrder() {
+      const savedOrder = localStorage.getItem(PRACTICE_ORDER_STORAGE_KEY);
+      const currentOrder = allowedPracticeOrders.includes(savedOrder) ? savedOrder : DEFAULT_PRACTICE_ORDER;
+      const currentInput = orderSettingsForm.querySelector(`[value="${currentOrder}"]`);
+
+      if (currentInput) {
+        currentInput.checked = true;
+      }
+    }
+
+    function saveExampleMode(mode) {
+      if (!allowedExampleModes.includes(mode)) {
+        return;
+      }
+
+      localStorage.setItem(EXAMPLE_MODE_STORAGE_KEY, mode);
+      showMessage("设置已保存");
+    }
+
+    function savePracticeOrder(order) {
+      if (!allowedPracticeOrders.includes(order)) {
+        return;
+      }
+
+      localStorage.setItem(PRACTICE_ORDER_STORAGE_KEY, order);
+      showOrderMessage("设置已保存");
+    }
+
+    function showMessage(text) {
+      settingsMessage.textContent = text;
+      settingsMessage.className = "settings-message success";
+    }
+
+    function showOrderMessage(text) {
+      orderSettingsMessage.textContent = text;
+      orderSettingsMessage.className = "settings-message success";
+    }
+
+    function exportBackupData() {
+      const backup = {
+        appName: "IELTS Typing Learner",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: getProjectData()
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "ielts-typing-learner-backup.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showDataMessage("数据已导出");
+    }
+
+    function getProjectData() {
+      return DATA_STORAGE_KEYS.reduce((data, key) => {
+        const value = localStorage.getItem(key);
+        data[key] = value;
+
+        return data;
+      }, {});
+    }
+
+    function importBackupData(event) {
+      const file = event.target.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.addEventListener("load", () => {
+        try {
+          const backup = JSON.parse(reader.result);
+
+          if (!isValidBackup(backup)) {
+            showDataMessage("备份文件格式不正确", "error");
+            return;
+          }
+
+          const confirmed = window.confirm("导入会覆盖当前本地词库数据，是否继续？");
+
+          if (!confirmed) {
+            return;
+          }
+
+          restoreProjectData(backup.data);
+          initializeExampleMode();
+          initializePracticeOrder();
+          showDataMessage("导入成功，请刷新页面或返回词库查看");
+        } catch {
+          showDataMessage("备份文件格式不正确", "error");
+        } finally {
+          importDataInput.value = "";
+        }
+      });
+
+      reader.addEventListener("error", () => {
+        showDataMessage("备份文件格式不正确", "error");
+        importDataInput.value = "";
+      });
+
+      reader.readAsText(file);
+    }
+
+    function isValidBackup(backup) {
+      return backup && typeof backup === "object" && backup.data && typeof backup.data === "object" && !Array.isArray(backup.data);
+    }
+
+    function restoreProjectData(data) {
+      DATA_STORAGE_KEYS.forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== null && data[key] !== undefined) {
+          localStorage.setItem(key, String(data[key]));
+        } else {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+
+    function clearLocalData() {
+      const firstConfirmed = window.confirm("确定要清空本项目保存在本机浏览器中的数据吗？");
+
+      if (!firstConfirmed) {
+        return;
+      }
+
+      const confirmed = window.confirm("请再次确认：清空后当前本地词库数据将被删除，是否继续？");
+
+      if (!confirmed) {
+        return;
+      }
+
+      DATA_STORAGE_KEYS.forEach((key) => {
+        localStorage.removeItem(key);
+      });
+      initializeExampleMode();
+      initializePracticeOrder();
+      showDataMessage("本地数据已清空");
+    }
+
+    function showDataMessage(text, type = "success") {
+      dataMessage.textContent = text;
+      dataMessage.className = `settings-message ${type}`;
+    }
+  </script>
+</body>
+</html>

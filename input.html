@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>录入今日生词 - IELTS Typing Learner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page entry-page">
+  <main class="entry-shell">
+    <header class="home-nav entry-nav">
+      <a class="home-brand" href="index.html" aria-label="返回首页">
+        <span class="home-logo">A</span>
+        <strong>IELTS Typing Learner</strong>
+      </a>
+
+      <div class="home-nav-actions">
+        <a class="home-nav-btn entry-nav-link" href="index.html" aria-label="返回首页">
+          <span aria-hidden="true">←</span>
+          返回首页
+        </a>
+        <a class="home-nav-btn" href="settings.html" aria-label="设置">
+          <span aria-hidden="true">⚙</span>
+          设置
+        </a>
+      </div>
+    </header>
+
+    <section class="entry-hero" aria-labelledby="entryTitle">
+      <h1 id="entryTitle">录入今日生词</h1>
+    </section>
+
+    <section class="entry-card" aria-label="录入今日生词">
+      <div class="entry-library-row">
+        <label class="entry-field">
+          <span>词库名称</span>
+          <input id="entryLibraryName" type="text" autocomplete="off">
+        </label>
+        <label class="entry-field">
+          <span>生词来源（可选）</span>
+          <input id="entrySource" type="text" autocomplete="off" placeholder="例如 剑雅18 Test 1 Passage 1">
+        </label>
+      </div>
+
+      <div class="entry-quick-row">
+        <label class="entry-input-wrap">
+          <span aria-hidden="true">英</span>
+          <input id="entryEnglish" type="text" autocomplete="off" placeholder="English">
+        </label>
+        <span class="entry-dash" aria-hidden="true">-</span>
+        <label class="entry-input-wrap">
+          <span aria-hidden="true">中</span>
+          <input id="entryChinese" type="text" autocomplete="off" placeholder="Chinese">
+        </label>
+        <button id="entryAddBtn" class="entry-add-btn" type="button">
+          <span aria-hidden="true">＋</span>
+          录入
+        </button>
+      </div>
+
+      <label class="entry-field entry-example-wrap">
+        <span>例句（可选）</span>
+        <input id="entryExample" type="text" autocomplete="off" placeholder="例如 The evidence is clear.">
+      </label>
+
+      <section class="entry-batch-wrap entry-current-wrap" aria-label="本次录入词汇">
+        <span class="entry-batch-icon" aria-hidden="true">▤</span>
+        <div class="entry-current-content">
+          <div class="entry-current-head">
+            <div>
+              <h2>本次录入词汇</h2>
+              <p id="entryCurrentLibrary">当前词库：今日词库</p>
+              <p>只显示本次新增的单词，历史单词可在“我的词库”查看。</p>
+            </div>
+            <strong id="entryWordCount">0 个词</strong>
+          </div>
+
+          <ul id="entryCurrentList" class="entry-current-list"></ul>
+          <p id="entryEmptyText" class="entry-empty-text">本次还没有录入单词。</p>
+        </div>
+      </section>
+
+      <p id="entryMessage" class="entry-message" role="status"></p>
+    </section>
+
+    <section class="entry-action-grid" aria-label="录入操作">
+      <button id="autoParseBtn" class="entry-action-card light-card" type="button">
+        <span class="entry-action-icon" aria-hidden="true">▦</span>
+        <span>
+          <strong>自动识别录入</strong>
+          <small>使用上方输入快速添加</small>
+        </span>
+        <b aria-hidden="true">›</b>
+      </button>
+
+      <button id="startPracticeFromHomeBtn" class="entry-action-card green-card" type="button">
+        <span class="entry-action-icon" aria-hidden="true">⌁</span>
+        <span>
+          <strong>开始练习</strong>
+          <small>巩固记忆，提升词汇量</small>
+        </span>
+        <b aria-hidden="true">›</b>
+      </button>
+
+      <button id="batchAddBtn" class="entry-action-card green-card wide-card" type="button">
+        <span class="entry-action-icon" aria-hidden="true">▱</span>
+        <span>
+          <strong>批量添加到词库</strong>
+          <small>将识别出的生词一次性添加到个人词库</small>
+        </span>
+      </button>
+    </section>
+  </main>
+
+  <script>
+    const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
+    const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
+    const LEGACY_WORDS_STORAGE_KEY = "ieltsTypingLearnerWords";
+
+    const libraryNameInput = document.querySelector("#entryLibraryName");
+    const sourceInput = document.querySelector("#entrySource");
+    const englishInput = document.querySelector("#entryEnglish");
+    const chineseInput = document.querySelector("#entryChinese");
+    const exampleInput = document.querySelector("#entryExample");
+    const addBtn = document.querySelector("#entryAddBtn");
+    const message = document.querySelector("#entryMessage");
+    const autoParseBtn = document.querySelector("#autoParseBtn");
+    const batchAddBtn = document.querySelector("#batchAddBtn");
+    const startPracticeBtn = document.querySelector("#startPracticeFromHomeBtn");
+    const currentLibraryText = document.querySelector("#entryCurrentLibrary");
+    const currentList = document.querySelector("#entryCurrentList");
+    const emptyText = document.querySelector("#entryEmptyText");
+    const wordCount = document.querySelector("#entryWordCount");
+
+    const todayName = getTodayName();
+    const inputMode = new URLSearchParams(window.location.search).get("mode") === "append" ? "append" : "new";
+    let libraries = loadLibraries();
+    let selectedLibraryId = initializeTargetLibraryId();
+    let sessionWords = [];
+    applyInitialLibraryName();
+    renderSessionWords();
+
+    englishInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        chineseInput.focus();
+      }
+    });
+
+    chineseInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addSingleWord();
+      }
+    });
+
+    addBtn.addEventListener("click", addSingleWord);
+    autoParseBtn.addEventListener("click", addSingleWord);
+    batchAddBtn.addEventListener("click", openBulkPage);
+    startPracticeBtn.addEventListener("click", () => {
+      ensureTargetLibrary();
+      window.location.href = "practice.html";
+    });
+
+    libraryNameInput.addEventListener("input", syncCurrentLibraryMeta);
+    sourceInput.addEventListener("input", syncCurrentLibraryMeta);
+
+    function addSingleWord() {
+      syncCurrentLibraryMeta();
+      const english = englishInput.value.trim().toLowerCase();
+      const chinese = normalizeChineseMeaning(chineseInput.value);
+      const example = exampleInput.value.trim();
+
+      if (!english) {
+        showMessage("请先输入英文单词。", "error");
+        englishInput.focus();
+        return;
+      }
+
+      if (!chinese) {
+        showMessage("请填写中文意思。", "error");
+        chineseInput.focus();
+        return;
+      }
+
+      const newWord = example ? { english, chinese, example } : { english, chinese };
+      const result = addWordsToTargetLibrary([newWord]);
+      if (result.added > 0) {
+        englishInput.value = "";
+        chineseInput.value = "";
+        exampleInput.value = "";
+      }
+      englishInput.focus();
+    }
+
+    function addWordsToTargetLibrary(newWords) {
+      const targetLibrary = ensureTargetLibrary();
+      const result = mergeWords(targetLibrary.words, newWords);
+      targetLibrary.words = result.words;
+      saveLibraries();
+      sessionWords = result.addedWords.concat(sessionWords);
+      renderSessionWords();
+
+      const status = result.added > 0 ? "success" : "error";
+      showMessage(`已添加 ${result.added} 个，跳过 ${result.skipped} 个重复。当前词库：${targetLibrary.name}`, status);
+      return result;
+    }
+
+    function openBulkPage() {
+      syncCurrentLibraryMeta();
+      ensureTargetLibrary();
+      window.location.href = "bulk.html";
+    }
+
+    function ensureTargetLibrary() {
+      if (selectedLibraryId) {
+        const selectedLibrary = libraries.find((library) => library.id === selectedLibraryId);
+
+        if (selectedLibrary) {
+          syncCurrentLibraryMeta();
+          localStorage.setItem(CURRENT_LIBRARY_ID_KEY, selectedLibrary.id);
+          return selectedLibrary;
+        }
+
+        selectedLibraryId = "";
+      }
+
+      const targetName = getTargetLibraryName();
+      let targetLibrary = libraries.find((library) => library.name === targetName);
+
+      if (!targetLibrary) {
+        targetLibrary = {
+          id: createLibraryId(),
+          name: targetName,
+          words: [],
+          wrongWords: []
+        };
+        libraries.push(targetLibrary);
+      }
+
+      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, targetLibrary.id);
+      saveLibraries();
+      return targetLibrary;
+    }
+
+    function getTargetLibraryName() {
+      const selectedLibrary = selectedLibraryId ? libraries.find((library) => library.id === selectedLibraryId) : null;
+
+      if (selectedLibrary) {
+        return composeLibraryName(libraryNameInput.value, sourceInput.value);
+      }
+
+      const baseName = libraryNameInput.value.trim() || todayName;
+      const source = sourceInput.value.trim();
+      return source ? `${baseName}｜${source}` : baseName;
+    }
+
+    function renderSessionWords() {
+      const targetName = getTargetLibraryName();
+      currentLibraryText.textContent = `当前词库：${targetName}`;
+      wordCount.textContent = `${sessionWords.length} 个词`;
+      currentList.innerHTML = "";
+      emptyText.hidden = sessionWords.length > 0;
+
+      sessionWords.forEach((word) => {
+        const item = document.createElement("li");
+        const english = document.createElement("strong");
+        const chinese = document.createElement("span");
+        const example = document.createElement("small");
+
+        english.textContent = word.english;
+        chinese.textContent = word.chinese;
+        example.textContent = word.example ? `例句：${word.example}` : "";
+        example.hidden = !word.example;
+        item.append(english, chinese, example);
+        currentList.appendChild(item);
+      });
+    }
+
+    function syncCurrentLibraryMeta() {
+      const currentLibrary = selectedLibraryId ? libraries.find((library) => library.id === selectedLibraryId) : null;
+
+      if (!currentLibrary) {
+        renderSessionWords();
+        return;
+      }
+
+      currentLibrary.name = composeLibraryName(libraryNameInput.value, sourceInput.value);
+
+      if (sourceInput.value.trim()) {
+        currentLibrary.source = sourceInput.value.trim();
+      } else {
+        delete currentLibrary.source;
+      }
+
+      saveLibraries();
+      renderSessionWords();
+    }
+
+    function applyInitialLibraryName() {
+      const selectedLibrary = selectedLibraryId ? libraries.find((library) => library.id === selectedLibraryId) : null;
+
+      if (!selectedLibrary) {
+        selectedLibraryId = "";
+        libraryNameInput.value = todayName;
+        sourceInput.value = "";
+        return;
+      }
+
+      const parts = getLibraryParts(selectedLibrary);
+      libraryNameInput.value = parts.name;
+      sourceInput.value = parts.source;
+    }
+
+    function getSavedLibraryId() {
+      const savedId = localStorage.getItem(CURRENT_LIBRARY_ID_KEY);
+      return libraries.some((library) => library.id === savedId) ? savedId : "";
+    }
+
+    function initializeTargetLibraryId() {
+      if (inputMode === "append") {
+        return getSavedLibraryId();
+      }
+
+      const newLibrary = {
+        id: createLibraryId(),
+        name: createTodayLibraryName(),
+        words: [],
+        wrongWords: []
+      };
+
+      libraries.push(newLibrary);
+      saveLibraries();
+      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, newLibrary.id);
+      return newLibrary.id;
+    }
+
+    function createTodayLibraryName() {
+      const existingNames = new Set(libraries.map((library) => library.name));
+
+      if (!existingNames.has(todayName)) {
+        return todayName;
+      }
+
+      let copyIndex = 2;
+      let candidateName = `${todayName} ${toCircledNumber(copyIndex)}`;
+
+      while (existingNames.has(candidateName)) {
+        copyIndex += 1;
+        candidateName = `${todayName} ${toCircledNumber(copyIndex)}`;
+      }
+
+      return candidateName;
+    }
+
+    function toCircledNumber(number) {
+      const circledNumbers = ["", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"];
+      return circledNumbers[number] || `(${number})`;
+    }
+
+    function getLibraryParts(library) {
+      const [name, parsedSource] = String(library.name || "").split("｜");
+      const source = (parsedSource || "").trim() || (typeof library.source === "string" ? library.source.trim() : "");
+
+      return {
+        name: name.trim() || library.name || todayName,
+        source
+      };
+    }
+
+    function composeLibraryName(name, source) {
+      const cleanName = name.trim() || todayName;
+      const cleanSource = source.trim();
+      return cleanSource ? `${cleanName}｜${cleanSource}` : cleanName;
+    }
+
+    function mergeWords(oldWords, newWords) {
+      const existingWords = [...oldWords];
+      const existingEnglish = new Set(existingWords.map((word) => word.english));
+      const addedWords = [];
+      let added = 0;
+      let skipped = 0;
+
+      newWords.forEach((word) => {
+        if (existingEnglish.has(word.english)) {
+          skipped += 1;
+          return;
+        }
+
+        existingWords.push(word);
+        addedWords.push(word);
+        existingEnglish.add(word.english);
+        added += 1;
+      });
+
+      return {
+        words: existingWords,
+        addedWords,
+        added,
+        skipped
+      };
+    }
+
+    function normalizeChineseMeaning(text) {
+      return text
+        .split(/[；;，,、\/|｜]+/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .join("；");
+    }
+
+    function loadLibraries() {
+      const savedLibraries = localStorage.getItem(LIBRARIES_STORAGE_KEY);
+
+      if (savedLibraries) {
+        try {
+          const parsedLibraries = JSON.parse(savedLibraries);
+          if (Array.isArray(parsedLibraries) && parsedLibraries.length > 0) {
+            return parsedLibraries.map(normalizeLibrary);
+          }
+        } catch {
+          return [];
+        }
+      }
+
+      const legacyWords = loadLegacyWords();
+      return legacyWords.length > 0
+        ? [{
+          id: createLibraryId(),
+          name: todayName,
+          words: legacyWords,
+          wrongWords: []
+        }]
+        : [];
+    }
+
+    function loadLegacyWords() {
+      const savedWords = localStorage.getItem(LEGACY_WORDS_STORAGE_KEY);
+
+      if (!savedWords) {
+        return [];
+      }
+
+      try {
+        const parsedWords = JSON.parse(savedWords);
+        return Array.isArray(parsedWords) ? parsedWords : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function normalizeLibrary(library) {
+      return {
+        id: library.id || createLibraryId(),
+        name: library.name || "未命名词库",
+        words: Array.isArray(library.words) ? library.words : [],
+        wrongWords: Array.isArray(library.wrongWords) ? library.wrongWords : []
+      };
+    }
+
+    function saveLibraries() {
+      localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+    }
+
+    function createLibraryId() {
+      return `library-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function getTodayName() {
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function showMessage(text, type = "normal") {
+      message.textContent = text;
+      message.className = `entry-message ${type}`;
+    }
+  </script>
+</body>
+</html>
