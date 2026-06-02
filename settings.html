@@ -59,15 +59,46 @@
 
       <p id="settingsMessage" class="settings-message" role="status"></p>
     </section>
+
+    <section class="settings-card" aria-labelledby="dataManageTitle">
+      <div class="settings-card-head">
+        <span>本地数据</span>
+        <h2 id="dataManageTitle">数据管理</h2>
+      </div>
+
+      <p class="settings-note">导出、导入或清空本机浏览器中的词库和练习设置。</p>
+
+      <div class="settings-data-actions">
+        <button id="exportDataBtn" class="practice-page-btn practice-primary-btn" type="button">导出数据</button>
+        <label class="practice-page-btn practice-ghost-btn settings-import-btn">
+          导入数据
+          <input id="importDataInput" type="file" accept="application/json,.json">
+        </label>
+        <button id="clearDataBtn" class="practice-page-btn library-danger-btn" type="button">清空本地数据</button>
+      </div>
+
+      <p id="dataMessage" class="settings-message" role="status"></p>
+    </section>
   </main>
 
   <script>
+    const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
+    const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
     const EXAMPLE_MODE_STORAGE_KEY = "ieltsTypingLearnerExampleMode";
     const DEFAULT_EXAMPLE_MODE = "afterSecondWrong";
+    const DATA_STORAGE_KEYS = [
+      LIBRARIES_STORAGE_KEY,
+      CURRENT_LIBRARY_ID_KEY,
+      EXAMPLE_MODE_STORAGE_KEY
+    ];
     const allowedExampleModes = ["always", "afterSecondWrong", "hidden"];
 
     const settingsForm = document.querySelector("#settingsForm");
     const settingsMessage = document.querySelector("#settingsMessage");
+    const exportDataBtn = document.querySelector("#exportDataBtn");
+    const importDataInput = document.querySelector("#importDataInput");
+    const clearDataBtn = document.querySelector("#clearDataBtn");
+    const dataMessage = document.querySelector("#dataMessage");
 
     initializeExampleMode();
 
@@ -78,6 +109,9 @@
 
       saveExampleMode(event.target.value);
     });
+    exportDataBtn.addEventListener("click", exportBackupData);
+    importDataInput.addEventListener("change", importBackupData);
+    clearDataBtn.addEventListener("click", clearLocalData);
 
     function initializeExampleMode() {
       const savedMode = localStorage.getItem(EXAMPLE_MODE_STORAGE_KEY);
@@ -101,6 +135,116 @@
     function showMessage(text) {
       settingsMessage.textContent = text;
       settingsMessage.className = "settings-message success";
+    }
+
+    function exportBackupData() {
+      const backup = {
+        appName: "IELTS Typing Learner",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: getProjectData()
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "ielts-typing-learner-backup.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showDataMessage("数据已导出");
+    }
+
+    function getProjectData() {
+      return DATA_STORAGE_KEYS.reduce((data, key) => {
+        const value = localStorage.getItem(key);
+        data[key] = value;
+
+        return data;
+      }, {});
+    }
+
+    function importBackupData(event) {
+      const file = event.target.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.addEventListener("load", () => {
+        try {
+          const backup = JSON.parse(reader.result);
+
+          if (!isValidBackup(backup)) {
+            showDataMessage("备份文件格式不正确", "error");
+            return;
+          }
+
+          const confirmed = window.confirm("导入会覆盖当前本地词库数据，是否继续？");
+
+          if (!confirmed) {
+            return;
+          }
+
+          restoreProjectData(backup.data);
+          initializeExampleMode();
+          showDataMessage("导入成功，请刷新页面或返回词库查看");
+        } catch {
+          showDataMessage("备份文件格式不正确", "error");
+        } finally {
+          importDataInput.value = "";
+        }
+      });
+
+      reader.addEventListener("error", () => {
+        showDataMessage("备份文件格式不正确", "error");
+        importDataInput.value = "";
+      });
+
+      reader.readAsText(file);
+    }
+
+    function isValidBackup(backup) {
+      return backup && typeof backup === "object" && backup.data && typeof backup.data === "object" && !Array.isArray(backup.data);
+    }
+
+    function restoreProjectData(data) {
+      DATA_STORAGE_KEYS.forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== null && data[key] !== undefined) {
+          localStorage.setItem(key, String(data[key]));
+        } else {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+
+    function clearLocalData() {
+      const firstConfirmed = window.confirm("确定要清空本项目保存在本机浏览器中的数据吗？");
+
+      if (!firstConfirmed) {
+        return;
+      }
+
+      const confirmed = window.confirm("请再次确认：清空后当前本地词库数据将被删除，是否继续？");
+
+      if (!confirmed) {
+        return;
+      }
+
+      DATA_STORAGE_KEYS.forEach((key) => {
+        localStorage.removeItem(key);
+      });
+      initializeExampleMode();
+      showDataMessage("本地数据已清空");
+    }
+
+    function showDataMessage(text, type = "success") {
+      dataMessage.textContent = text;
+      dataMessage.className = `settings-message ${type}`;
     }
   </script>
 </body>

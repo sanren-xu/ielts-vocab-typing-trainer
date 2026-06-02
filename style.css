@@ -1413,6 +1413,11 @@ body.entry-page {
   font-size: 26px;
 }
 
+.settings-note {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
 .settings-options {
   display: grid;
   gap: 14px;
@@ -1463,6 +1468,29 @@ body.entry-page {
 
 .settings-message.success {
   color: var(--success);
+}
+
+.settings-message.error {
+  color: var(--danger);
+}
+
+.settings-data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.settings-import-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.settings-import-btn input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .bulk-page {
