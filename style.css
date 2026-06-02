@@ -954,6 +954,32 @@ body.entry-page {
   line-height: 1.5;
 }
 
+.practice-result-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.practice-result-grid div {
+  padding: 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfdfd;
+}
+
+.practice-result-grid strong {
+  display: block;
+  color: var(--primary-dark);
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.practice-result-grid small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
 .practice-complete-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2812,6 +2838,10 @@ body.practice-active #emptyWrongBookText {
     min-height: 64px;
     padding: 0 18px;
     font-size: 20px;
+  }
+
+  .practice-result-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .practice-bottom-actions {

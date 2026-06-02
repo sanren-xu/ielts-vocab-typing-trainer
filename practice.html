@@ -50,11 +50,29 @@
         <button id="practiceShowAnswerBtn" class="practice-page-btn practice-ghost-btn" type="button" hidden>显示答案</button>
 
         <div id="practiceCompletePanel" class="practice-complete-panel" hidden>
-          <h2>本轮完成</h2>
+          <h2>本轮练习完成</h2>
           <p id="practiceCompleteText">你已经完成当前词库的练习。</p>
+          <div class="practice-result-grid" aria-label="本轮练习结果">
+            <div>
+              <strong id="completeTotalCount">0</strong>
+              <small>总词数</small>
+            </div>
+            <div>
+              <strong id="completeCorrectCount">0</strong>
+              <small>正确数量</small>
+            </div>
+            <div>
+              <strong id="completeErrorCount">0</strong>
+              <small>错误数量</small>
+            </div>
+            <div>
+              <strong id="completeWrongWordCount">0</strong>
+              <small>错词数量</small>
+            </div>
+          </div>
           <div class="practice-complete-actions">
             <a class="practice-page-btn practice-ghost-btn" href="library.html">返回词库</a>
-            <button id="practiceAgainBtn" class="practice-page-btn practice-primary-btn" type="button">再练一轮</button>
+            <button id="practiceAgainBtn" class="practice-page-btn practice-primary-btn" type="button">再练一次</button>
             <button id="practiceWrongOnlyBtn" class="practice-page-btn practice-ghost-btn" type="button">只练错词</button>
           </div>
         </div>
@@ -98,6 +116,10 @@
     const showAnswerBtn = document.querySelector("#practiceShowAnswerBtn");
     const completePanel = document.querySelector("#practiceCompletePanel");
     const completeText = document.querySelector("#practiceCompleteText");
+    const completeTotalCountEl = document.querySelector("#completeTotalCount");
+    const completeCorrectCountEl = document.querySelector("#completeCorrectCount");
+    const completeErrorCountEl = document.querySelector("#completeErrorCount");
+    const completeWrongWordCountEl = document.querySelector("#completeWrongWordCount");
     const practiceAgainBtn = document.querySelector("#practiceAgainBtn");
     const wrongOnlyBtn = document.querySelector("#practiceWrongOnlyBtn");
     const examplePane = document.querySelector("#practiceExamplePane");
@@ -113,6 +135,7 @@
     let currentWord = null;
     let attemptCount = 0;
     let answerRevealed = false;
+    let roundWrongAttempts = 0;
     let roundWrongWords = new Set();
 
     libraryNameEl.textContent = currentLibrary.name;
@@ -147,6 +170,7 @@
       currentWord = null;
       attemptCount = 0;
       answerRevealed = false;
+      roundWrongAttempts = 0;
       roundWrongWords = new Set();
       completePanel.hidden = true;
       submitBtn.disabled = practiceQueue.length === 0;
@@ -215,6 +239,7 @@
       }
 
       attemptCount += 1;
+      roundWrongAttempts += 1;
       roundWrongWords.add(currentWord.english);
       addWrongWord(currentWord);
       updateExamplePane();
@@ -261,8 +286,20 @@
       feedbackEl.textContent = "本轮完成。";
       feedbackEl.className = "practice-feedback correct";
       progressEl.textContent = `${practiceQueue.length} / ${practiceQueue.length}`;
-      completeText.textContent = `本轮总词数 ${practiceQueue.length}，错词 ${roundWrongWords.size} 个。`;
+      renderCompleteStats();
       completePanel.hidden = false;
+    }
+
+    function renderCompleteStats() {
+      const totalCount = practiceQueue.length;
+      const wrongWordCount = roundWrongWords.size;
+      const correctCount = Math.max(totalCount - wrongWordCount, 0);
+
+      completeText.textContent = "本轮练习完成，可以返回词库或再练一次。";
+      completeTotalCountEl.textContent = totalCount;
+      completeCorrectCountEl.textContent = correctCount;
+      completeErrorCountEl.textContent = roundWrongAttempts;
+      completeWrongWordCountEl.textContent = wrongWordCount;
     }
 
     function showEmptyState() {
