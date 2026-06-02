@@ -44,6 +44,7 @@
             <button id="renameLibraryBtn" class="practice-page-btn practice-ghost-btn" type="button">重命名</button>
             <button id="deleteLibraryBtn" class="practice-page-btn library-danger-btn" type="button">删除词库</button>
             <button id="inputLibraryBtn" class="practice-page-btn practice-ghost-btn" type="button">录入单词</button>
+            <button id="startWrongPracticeBtn" class="practice-page-btn practice-ghost-btn" type="button">练习错词</button>
             <button id="startLibraryPracticeBtn" class="practice-page-btn practice-primary-btn" type="button">开始练习</button>
           </div>
         </div>
@@ -118,6 +119,7 @@
     const renameLibraryBtn = document.querySelector("#renameLibraryBtn");
     const deleteLibraryBtn = document.querySelector("#deleteLibraryBtn");
     const inputLibraryBtn = document.querySelector("#inputLibraryBtn");
+    const startWrongPracticeBtn = document.querySelector("#startWrongPracticeBtn");
     const startPracticeBtn = document.querySelector("#startLibraryPracticeBtn");
     const modalBackdrop = document.querySelector("#libraryModal");
     const modalForm = document.querySelector("#libraryModalForm");
@@ -138,6 +140,7 @@
     renameLibraryBtn.addEventListener("click", renameCurrentLibrary);
     deleteLibraryBtn.addEventListener("click", deleteCurrentLibrary);
     inputLibraryBtn.addEventListener("click", openInputPage);
+    startWrongPracticeBtn.addEventListener("click", startWrongPractice);
     startPracticeBtn.addEventListener("click", startPractice);
     searchInputEl.addEventListener("input", () => {
       renderLibraryDetail(getCurrentLibrary());
@@ -228,6 +231,7 @@
       renameLibraryBtn.disabled = false;
       deleteLibraryBtn.disabled = false;
       inputLibraryBtn.disabled = false;
+      startWrongPracticeBtn.disabled = wrongWords.length === 0;
       startPracticeBtn.disabled = words.length === 0;
       searchInputEl.disabled = words.length === 0;
       wordListEl.innerHTML = "";
@@ -256,6 +260,7 @@
       renameLibraryBtn.disabled = true;
       deleteLibraryBtn.disabled = true;
       inputLibraryBtn.disabled = true;
+      startWrongPracticeBtn.disabled = true;
       startPracticeBtn.disabled = true;
     }
 
@@ -518,6 +523,18 @@
 
       localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
       window.location.href = "practice.html";
+    }
+
+    function startWrongPractice() {
+      const library = getCurrentLibrary();
+
+      if (!library || getWrongWords(library).length === 0) {
+        showMessage("当前词库暂无错词。", "error");
+        return;
+      }
+
+      localStorage.setItem(CURRENT_LIBRARY_ID_KEY, currentLibraryId);
+      window.location.href = "practice.html?mode=wrong";
     }
 
     function openInputPage() {

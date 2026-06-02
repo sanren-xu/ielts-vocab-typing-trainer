@@ -1364,6 +1364,10 @@ body.entry-page {
   grid-template-columns: minmax(0, 160px);
 }
 
+.wrong-library-empty {
+  margin-top: 18px;
+}
+
 .wrong-word-meta {
   display: flex;
   flex-wrap: wrap;
