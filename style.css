@@ -1139,6 +1139,10 @@ body.entry-page {
   line-height: 1.45;
 }
 
+.library-order-actions {
+  margin-top: 8px;
+}
+
 .library-detail-card {
   display: flex;
   flex-direction: column;

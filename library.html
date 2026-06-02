@@ -164,13 +164,16 @@
     function renderLibraryList() {
       libraryListEl.innerHTML = "";
 
-      libraries.forEach((library) => {
+      libraries.forEach((library, index) => {
         const parts = getLibraryParts(library);
         const item = document.createElement("li");
         const button = document.createElement("button");
         const title = document.createElement("strong");
         const source = document.createElement("span");
         const meta = document.createElement("small");
+        const actions = document.createElement("div");
+        const moveUpBtn = document.createElement("button");
+        const moveDownBtn = document.createElement("button");
 
         item.className = library.id === currentLibraryId ? "active" : "";
         button.type = "button";
@@ -181,8 +184,22 @@
         source.hidden = !parts.source;
         meta.textContent = `${getWords(library).length} 个单词 · ${getWrongWords(library).length} 个错词`;
 
+        actions.className = "library-actions library-order-actions";
+        moveUpBtn.type = "button";
+        moveUpBtn.className = "library-action-btn library-small-btn";
+        moveUpBtn.textContent = "上移";
+        moveUpBtn.disabled = index === 0;
+        moveUpBtn.addEventListener("click", () => moveLibrary(library.id, -1));
+
+        moveDownBtn.type = "button";
+        moveDownBtn.className = "library-action-btn library-small-btn";
+        moveDownBtn.textContent = "下移";
+        moveDownBtn.disabled = index === libraries.length - 1;
+        moveDownBtn.addEventListener("click", () => moveLibrary(library.id, 1));
+
         button.append(title, source, meta);
-        item.append(button);
+        actions.append(moveUpBtn, moveDownBtn);
+        item.append(button, actions);
         libraryListEl.appendChild(item);
       });
     }
@@ -475,6 +492,20 @@
     function switchLibrary(libraryId) {
       currentLibraryId = libraryId;
       searchInputEl.value = "";
+      renderPage();
+      showMessage("");
+    }
+
+    function moveLibrary(libraryId, direction) {
+      const currentIndex = libraries.findIndex((library) => library.id === libraryId);
+      const targetIndex = currentIndex + direction;
+
+      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= libraries.length) {
+        return;
+      }
+
+      [libraries[currentIndex], libraries[targetIndex]] = [libraries[targetIndex], libraries[currentIndex]];
+      saveLibraries();
       renderPage();
       showMessage("");
     }

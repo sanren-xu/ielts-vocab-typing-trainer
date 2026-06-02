@@ -275,8 +275,12 @@
 
       attemptCount += 1;
       roundWrongAttempts += 1;
-      roundWrongWords.add(currentWord.english);
-      addWrongWord(currentWord);
+
+      if (!roundWrongWords.has(currentWord.english)) {
+        addWrongWord(currentWord);
+        roundWrongWords.add(currentWord.english);
+      }
+
       updateExamplePane();
 
       if (answerRevealed) {
