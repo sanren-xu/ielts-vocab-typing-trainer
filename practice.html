@@ -140,6 +140,7 @@
     let answerRevealed = false;
     let roundWrongAttempts = 0;
     let roundWrongWords = new Set();
+    let roundStatsSaved = false;
 
     libraryNameEl.textContent = currentLibrary.name;
     startPractice(sourceWords, initialPracticeMode);
@@ -182,6 +183,7 @@
       answerRevealed = false;
       roundWrongAttempts = 0;
       roundWrongWords = new Set();
+      roundStatsSaved = false;
       completePanel.hidden = true;
       submitBtn.disabled = practiceQueue.length === 0;
       answerInput.disabled = practiceQueue.length === 0;
@@ -326,6 +328,7 @@
       feedbackEl.textContent = "本轮完成。";
       feedbackEl.className = "practice-feedback correct";
       progressEl.textContent = `${practiceQueue.length} / ${practiceQueue.length}`;
+      saveRoundPracticeStats();
       renderCompleteStats();
       completePanel.hidden = false;
     }
@@ -340,6 +343,113 @@
       completeCorrectCountEl.textContent = correctCount;
       completeErrorCountEl.textContent = roundWrongAttempts;
       completeWrongWordCountEl.textContent = wrongWordCount;
+    }
+
+    function saveRoundPracticeStats() {
+      if (roundStatsSaved || !currentLibrary || practiceQueue.length === 0) {
+        return;
+      }
+
+      roundStatsSaved = true;
+
+      const practicedAt = new Date().toISOString();
+      const practicedWords = getUniquePracticedWords();
+
+      practicedWords.forEach(({ word, wasWrong }) => {
+        word.practiceCount = toStatCount(word.practiceCount) + 1;
+        word.lastPracticedAt = practicedAt;
+
+        if (wasWrong) {
+          word.wrongRoundCount = toStatCount(word.wrongRoundCount) + 1;
+          word.correctStreak = 0;
+          word.inWrongBook = true;
+          return;
+        }
+
+        word.correctCount = toStatCount(word.correctCount) + 1;
+        word.correctStreak = toStatCount(word.correctStreak) + 1;
+      });
+
+      currentLibrary.totalPracticeRounds = toStatCount(currentLibrary.totalPracticeRounds) + 1;
+      currentLibrary.lastPracticedAt = practicedAt;
+      syncCurrentLibraryIntoLibraries();
+      saveLibraries();
+    }
+
+    function getUniquePracticedWords() {
+      const practicedWords = new Map();
+
+      practiceQueue.forEach((queueWord) => {
+        const key = getWordKey(queueWord);
+        const word = findLibraryWord(queueWord);
+
+        if (!key || !word) {
+          return;
+        }
+
+        const wasWrong = wasWordWrongThisRound(queueWord);
+        const existing = practicedWords.get(key);
+
+        if (existing) {
+          existing.wasWrong = existing.wasWrong || wasWrong;
+          return;
+        }
+
+        practicedWords.set(key, {
+          word,
+          wasWrong
+        });
+      });
+
+      return Array.from(practicedWords.values());
+    }
+
+    function findLibraryWord(queueWord) {
+      const words = Array.isArray(currentLibrary.words) ? currentLibrary.words : [];
+      const wordId = typeof queueWord.id === "string" ? queueWord.id.trim() : "";
+
+      if (wordId) {
+        const matchedById = words.find((word) => word.id === wordId);
+
+        if (matchedById) {
+          return matchedById;
+        }
+      }
+
+      const englishKey = getEnglishKey(queueWord);
+      return words.find((word) => getEnglishKey(word) === englishKey);
+    }
+
+    function wasWordWrongThisRound(word) {
+      const englishKey = getEnglishKey(word);
+
+      return Array.from(roundWrongWords).some((wrongEnglish) => normalizeEnglish(wrongEnglish) === englishKey);
+    }
+
+    function syncCurrentLibraryIntoLibraries() {
+      const libraryIndex = libraries.findIndex((library) => library.id === currentLibrary.id);
+
+      if (libraryIndex >= 0) {
+        libraries[libraryIndex] = currentLibrary;
+      }
+    }
+
+    function getWordKey(word) {
+      const wordId = typeof word.id === "string" ? word.id.trim() : "";
+      return wordId || getEnglishKey(word);
+    }
+
+    function getEnglishKey(word) {
+      return normalizeEnglish(word?.english);
+    }
+
+    function normalizeEnglish(text) {
+      return typeof text === "string" ? text.trim().toLowerCase() : "";
+    }
+
+    function toStatCount(value) {
+      const count = Number(value);
+      return Number.isFinite(count) && count >= 0 ? count : 0;
     }
 
     function showEmptyState() {
