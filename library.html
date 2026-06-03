@@ -96,6 +96,7 @@
     </form>
   </div>
 
+  <script src="data-model.js"></script>
   <script>
     const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
     const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
@@ -641,7 +642,9 @@
         try {
           const parsedLibraries = JSON.parse(savedLibraries);
           if (Array.isArray(parsedLibraries)) {
-            return parsedLibraries.map(normalizeLibrary);
+            return window.IELTSDataModel.saveLibraries(parsedLibraries, {
+              createLibraryId
+            });
           }
         } catch {
           return createDefaultLibraries();
@@ -666,8 +669,9 @@
         wrongWords: []
       };
 
-      localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify([defaultLibrary]));
-      return [defaultLibrary];
+      return window.IELTSDataModel.saveLibraries([defaultLibrary], {
+        createLibraryId
+      });
     }
 
     function loadLegacyWords() {
@@ -712,7 +716,9 @@
     }
 
     function saveLibraries() {
-      localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+      libraries = window.IELTSDataModel.saveLibraries(libraries, {
+        createLibraryId
+      });
     }
 
     function saveCurrentLibraryId() {

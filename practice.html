@@ -100,6 +100,7 @@
     </section>
   </main>
 
+  <script src="data-model.js"></script>
   <script>
     const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
     const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
@@ -493,7 +494,9 @@
         try {
           const parsedLibraries = JSON.parse(savedLibraries);
           if (Array.isArray(parsedLibraries) && parsedLibraries.length > 0) {
-            return parsedLibraries.map(normalizeLibrary);
+            return window.IELTSDataModel.saveLibraries(parsedLibraries, {
+              createLibraryId
+            });
           }
         } catch {
           return createDefaultLibraries();
@@ -505,12 +508,14 @@
 
     function createDefaultLibraries() {
       const legacyWords = loadLegacyWords();
-      return [{
+      return window.IELTSDataModel.saveLibraries([{
         id: createLibraryId(),
         name: "默认词库",
         words: legacyWords,
         wrongWords: []
-      }];
+      }], {
+        createLibraryId
+      });
     }
 
     function loadLegacyWords() {
@@ -554,7 +559,9 @@
     }
 
     function saveLibraries() {
-      localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+      libraries = window.IELTSDataModel.saveLibraries(libraries, {
+        createLibraryId
+      });
     }
 
     function createLibraryId() {

@@ -108,9 +108,11 @@
     </section>
   </main>
 
+  <script src="data-model.js"></script>
   <script>
     const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
     const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
+    const DATA_VERSION_STORAGE_KEY = "ieltsTypingLearnerDataVersion";
     const EXAMPLE_MODE_STORAGE_KEY = "ieltsTypingLearnerExampleMode";
     const PRACTICE_ORDER_STORAGE_KEY = "ieltsTypingLearnerPracticeOrder";
     const DEFAULT_EXAMPLE_MODE = "afterSecondWrong";
@@ -118,6 +120,7 @@
     const DATA_STORAGE_KEYS = [
       LIBRARIES_STORAGE_KEY,
       CURRENT_LIBRARY_ID_KEY,
+      DATA_VERSION_STORAGE_KEY,
       EXAMPLE_MODE_STORAGE_KEY,
       PRACTICE_ORDER_STORAGE_KEY
     ];
@@ -133,6 +136,7 @@
     const clearDataBtn = document.querySelector("#clearDataBtn");
     const dataMessage = document.querySelector("#dataMessage");
 
+    window.IELTSDataModel.migrateStoredData();
     initializeExampleMode();
     initializePracticeOrder();
 
@@ -203,6 +207,7 @@
     }
 
     function exportBackupData() {
+      window.IELTSDataModel.migrateStoredData();
       const backup = {
         appName: "IELTS Typing Learner",
         version: 1,
@@ -286,6 +291,7 @@
           localStorage.removeItem(key);
         }
       });
+      window.IELTSDataModel.migrateStoredData();
     }
 
     function clearLocalData() {

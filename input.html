@@ -112,6 +112,7 @@
     </section>
   </main>
 
+  <script src="data-model.js"></script>
   <script>
     const LIBRARIES_STORAGE_KEY = "ieltsTypingLearnerLibraries";
     const CURRENT_LIBRARY_ID_KEY = "ieltsTypingLearnerCurrentLibraryId";
@@ -416,21 +417,26 @@
         try {
           const parsedLibraries = JSON.parse(savedLibraries);
           if (Array.isArray(parsedLibraries) && parsedLibraries.length > 0) {
-            return parsedLibraries.map(normalizeLibrary);
+            return window.IELTSDataModel.saveLibraries(parsedLibraries, {
+              createLibraryId
+            });
           }
         } catch {
           return [];
         }
       }
 
+      window.IELTSDataModel.migrateStoredData();
       const legacyWords = loadLegacyWords();
       return legacyWords.length > 0
-        ? [{
+        ? window.IELTSDataModel.saveLibraries([{
           id: createLibraryId(),
           name: todayName,
           words: legacyWords,
           wrongWords: []
-        }]
+        }], {
+          createLibraryId
+        })
         : [];
     }
 
@@ -459,7 +465,9 @@
     }
 
     function saveLibraries() {
-      localStorage.setItem(LIBRARIES_STORAGE_KEY, JSON.stringify(libraries));
+      libraries = window.IELTSDataModel.saveLibraries(libraries, {
+        createLibraryId
+      });
     }
 
     function createLibraryId() {
