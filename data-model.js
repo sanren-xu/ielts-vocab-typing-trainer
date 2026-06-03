@@ -121,9 +121,15 @@
       const matchedWord = wordByEnglish.get(key);
 
       if (matchedWord) {
+        const wrongWordMeta = context.wrongWordMetaByEnglish?.get(key);
         matchedWord.inWrongBook = true;
         matchedWord.wrongRoundCount = Math.max(matchedWord.wrongRoundCount, wrongWord.wrongCount);
-        matchedWord.correctStreak = toCount(wrongWord.correctStreak, matchedWord.correctStreak);
+
+        if (!wrongWordMeta || wrongWordMeta.hasCorrectStreak) {
+          matchedWord.correctStreak = toCount(wrongWord.correctStreak, matchedWord.correctStreak);
+        } else {
+          wrongWord.correctStreak = matchedWord.correctStreak;
+        }
 
         if (!matchedWord.chinese && wrongWord.chinese) {
           matchedWord.chinese = wrongWord.chinese;
@@ -167,8 +173,22 @@
       createWordId: options.createWordId
     };
 
-    normalizedLibrary.wrongWords = Array.isArray(library.wrongWords)
-      ? library.wrongWords.map(normalizeWrongWord)
+    const rawWrongWords = Array.isArray(library.wrongWords) ? library.wrongWords : [];
+    const wrongWordMetaByEnglish = new Map();
+
+    rawWrongWords.forEach((word) => {
+      const key = toText(word.english).trim().toLowerCase();
+
+      if (key) {
+        wrongWordMetaByEnglish.set(key, {
+          hasCorrectStreak: Object.prototype.hasOwnProperty.call(word, "correctStreak")
+        });
+      }
+    });
+
+    wordContext.wrongWordMetaByEnglish = wrongWordMetaByEnglish;
+    normalizedLibrary.wrongWords = rawWrongWords.length > 0
+      ? rawWrongWords.map(normalizeWrongWord)
       : [];
     const wrongWordKeys = new Set(normalizedLibrary.wrongWords
       .map((word) => word.english.trim().toLowerCase())

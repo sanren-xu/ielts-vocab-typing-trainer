@@ -219,8 +219,9 @@
 
         if (selectedLibrary) {
           syncCurrentLibraryMeta();
-          localStorage.setItem(CURRENT_LIBRARY_ID_KEY, selectedLibrary.id);
-          return selectedLibrary;
+          const refreshedLibrary = libraries.find((library) => library.id === selectedLibraryId) || selectedLibrary;
+          localStorage.setItem(CURRENT_LIBRARY_ID_KEY, refreshedLibrary.id);
+          return refreshedLibrary;
         }
 
         selectedLibraryId = "";
@@ -241,7 +242,7 @@
 
       localStorage.setItem(CURRENT_LIBRARY_ID_KEY, targetLibrary.id);
       saveLibraries();
-      return targetLibrary;
+      return libraries.find((library) => library.id === targetLibrary.id) || targetLibrary;
     }
 
     function getTargetLibraryName() {
