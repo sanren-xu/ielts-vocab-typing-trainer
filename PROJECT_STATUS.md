@@ -231,9 +231,12 @@ V1 暂时不做：
 8. `AGENTS.md`
 9. `DOC_INDEX.md`
 
-准备新增或完善：
+已新增 / 持续完善：
 
 1. `FRONTEND_REVIEW.md`
+
+准备后续新增或完善：
+
 2. `API_DESIGN.md`
 3. `DATABASE_SCHEMA.md`
 4. `PAYMENT_FLOW.md`
@@ -263,7 +266,7 @@ V1 暂时不做：
 5. 更新 `PRODUCT_DIRECTION.md`
 6. 更新 `README.md`
 7. 更新 `CODEX_RULES.md`
-8. 新增 `FRONTEND_REVIEW.md`
+8. 持续完善 `FRONTEND_REVIEW.md`
 9. 再决定前端页面改造顺序
 10. 最后进入后端骨架
 
@@ -276,7 +279,7 @@ V1 暂时不做：
 1. 完成文档重整
 2. 压缩项目给 ChatGPT 检查文档一致性
 3. 根据检查结果修正文档
-4. 新增 `FRONTEND_REVIEW.md`
+4. 持续完善 `FRONTEND_REVIEW.md`
 5. 复盘现有前端页面
 6. 决定商业化版页面结构
 7. 再进入第 3 阶段：后端骨架
