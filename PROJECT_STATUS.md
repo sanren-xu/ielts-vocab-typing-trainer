@@ -1,218 +1,394 @@
-# IELTS Typing Learner 项目状态
+# PROJECT_STATUS.md
 
-## 一、项目基本信息
+## 1. 当前项目概况
 
-IELTS Typing Learner 是一个纯前端本地网页应用。当前技术栈是：
+项目名称：IELTS Typing Learner
 
-- HTML
-- CSS
-- JavaScript
-- localStorage
+项目定位：
 
-项目不依赖 React、Vue、Node、数据库或后端服务。数据保存在浏览器本地 localStorage 中。
+面向雅思机考考生的个人生词库手打练习工具。
 
-## 二、当前页面结构
+项目已经从单纯的“本地纯前端小工具”扩展为“双版本路线”：
 
-1. `index.html`
-   - 首页 / 主入口。
-   - 提供录入单词、我的词库、错词复习、设置等入口。
+1. `main`：本地稳定版
+2. `commercial-v1`：国内商业化 Web 版 V1
 
-2. `library.html`
-   - 我的词库 / 词库管理中心。
-   - 支持查看词库列表、切换当前词库、新建、重命名、删除词库、查看词库统计、编辑和删除单词、调整词库顺序。
-   - 当前词库可进入普通练习，也可在有错词时进入 `practice.html?mode=wrong`。
+当前主线工作在：
 
-3. `input.html`
-   - 单词录入页。
-   - 支持新建今日词库或追加到当前词库。
-   - 支持录入英文、中文、例句，并显示本次录入的单词。
-   - 可跳转到 `bulk.html` 做批量导入。
+`commercial-v1`
 
-4. `practice.html`
-   - 拼写练习页。
-   - 默认使用当前词库 `words` 作为练习队列。
-   - 支持 `practice.html?mode=wrong`，此时使用当前词库 `wrongWords` 作为练习队列。
-   - 支持随机 / 顺序练习、例句提示、显示答案、轮次统计和错词记录。
+---
 
-5. `settings.html`
-   - 设置页 / 本地数据管理页。
-   - 支持设置例句显示规则、练习顺序。
-   - 支持导出、导入、清空本地数据。
+## 2. 当前分支状态
 
-6. `wrong.html`
-   - 错词复习页。
-   - 左侧只显示有错词的词库目录，支持在可见错词词库之间上移 / 下移。
-   - 右侧显示当前错词词库的错词列表，支持练习错词和移出错词。
+当前重要分支：
 
-7. `app.html`
-   - 旧功能备份页，暂时保留。
-   - 不参与当前主流程开发。
+### main
 
-8. `bulk.html`
-   - 批量导入页，暂时保留。
-   - 当前从 `input.html` 可跳转进入，用于批量导入当前词库单词。
-   - 当前开发规则中一般不修改该页面。
+`main` 是本地稳定版。
 
-## 三、当前主要功能
+特点：
 
-1. 首页入口
-   - `index.html` 提供主功能入口：录入今日生词、我的词库、错词复习、设置。
+1. 纯前端
+2. HTML / CSS / JavaScript
+3. localStorage 保存数据
+4. GitHub Pages 可访问
+5. 作为稳定原型保留
 
-2. 词库管理
-   - `library.html` 管理所有词库。
-   - 支持新建词库、切换词库、重命名、删除词库。
-   - 支持查看当前词库单词数量和错词数量。
-   - 支持编辑、删除单词；删除单词时会同步删除该词在 `wrongWords` 中的记录。
+`main` 不做商业化大改。
 
-3. 单词录入
-   - `input.html` 支持录入英文、中文和可选例句。
-   - 支持新建今日词库，也支持追加到当前词库。
-   - 重复英文单词会被跳过。
+---
 
-4. 普通拼写练习
-   - `practice.html` 默认使用当前词库 `words` 练习。
-   - 练习时显示中文释义、首字母提示，并根据设置决定是否显示例句。
-   - 练习顺序由 `ieltsTypingLearnerPracticeOrder` 控制，支持随机和顺序。
+### commercial-v1
 
-5. 错词记录
-   - 普通练习或错词练习中答错单词时，会写入当前词库的 `wrongWords`。
-   - 错词按 `wrongCount` 降序、英文升序排序。
+`commercial-v1` 是商业化 Web 版开发分支。
 
-6. 错词复习页
-   - `wrong.html` 左侧只显示有错词的词库。
-   - 当前 `currentLibraryId` 指向无错词词库时，会自动选择第一个有错词的词库。
-   - 如果所有词库都没有错词，左侧显示“暂无错词词库”，右侧显示全局空状态。
-   - “移出错词”只从当前词库 `wrongWords` 删除，不删除 `words` 中的原单词。
+当前状态：
 
-7. 错词练习模式
-   - `practice.html?mode=wrong` 使用当前词库 `wrongWords` 作为练习队列。
-   - `library.html` 和 `wrong.html` 都有入口进入该模式。
+1. 已从 `main` 创建
+2. 已推送到 `origin/commercial-v1`
+3. 已新增 `CLOUD_VERSION_PLAN.md`
+4. 正在进行文档重整
+5. 准备进入前端复盘和后端骨架阶段
 
-8. 词库上移 / 下移
-   - `library.html` 支持调整全部词库顺序。
-   - 顺序直接来自 localStorage 中 `libraries` 数组顺序。
-   - `wrong.html` 左侧目录读取同一个数组顺序，但只显示有错词的词库，并支持在可见错词词库之间调整顺序。
+`commercial-v1` 允许引入：
 
-9. 设置页
-   - `settings.html` 支持例句显示规则：始终显示、第二次错误后显示、隐藏。
-   - 支持练习顺序：随机、顺序。
+1. Node.js
+2. Express
+3. MySQL
+4. 后端 API
+5. 注册 / 登录
+6. 云端数据
+7. 会员系统
+8. 订单和支付
+9. 管理后台
 
-10. 本地数据导入 / 导出 / 清空
-   - `settings.html` 支持导出当前项目数据备份。
-   - 导入会覆盖当前本地数据。
-   - 清空本地数据需要二次确认。
+---
 
-## 四、localStorage 数据结构
+## 3. 当前已完成的本地版功能
 
-1. libraries 存储 key
-   - `ieltsTypingLearnerLibraries`
-   - 值为 JSON 字符串，解析后是词库数组。
+当前本地版已经完成：
 
-2. currentLibraryId 存储 key
-   - `ieltsTypingLearnerCurrentLibraryId`
-   - 值为当前词库的 `id`。
+1. 首页 `index.html`
+2. 词库管理 `library.html`
+3. 单词录入 `input.html`
+4. 普通练习 `practice.html`
+5. 错词页 `wrong.html`
+6. 错词练习 `practice.html?mode=wrong`
+7. 设置页 `settings.html`
+8. 数据导入导出
+9. 词库排序
+10. 错词计数规则
+11. GitHub Pages 上线
+12. 数据结构 V2 兼容迁移
+13. 练习结束后更新 V2 统计字段
 
-3. 每个 library 大概包含的字段
-   - `id`: 词库唯一 ID，通常形如 `library-${Date.now()}-${random}`。
-   - `name`: 词库名称。部分页面会从名称中解析来源信息。
-   - `source`: 可选，生词来源。
-   - `words`: 普通单词数组。
-   - `wrongWords`: 错词数组。
+---
 
-4. words 结构
-   - `english`: 英文单词。
-   - `chinese`: 中文释义。
-   - `example`: 可选例句。
+## 4. 当前本地版页面
 
-5. wrongWords 结构
-   - `english`: 英文单词。
-   - `chinese`: 中文释义。
-   - `example`: 可选例句。
-   - `wrongCount`: 错词累计轮次计数。
-   - `correctStreak`: 错词练习中的连续正确次数。
+当前页面包括：
 
-6. settings 相关 key
-   - `ieltsTypingLearnerExampleMode`
-     - 可选值：`always`、`afterSecondWrong`、`hidden`。
-     - 默认值：`afterSecondWrong`。
-   - `ieltsTypingLearnerPracticeOrder`
-     - 可选值：`random`、`sequential`。
-     - 默认值：`random`。
+1. `index.html`：首页
+2. `library.html`：词库管理
+3. `input.html`：录入单词
+4. `practice.html`：拼写练习
+5. `wrong.html`：错词复习
+6. `settings.html`：设置和数据导入导出
+7. `app.html`：旧页面 / 备份页面
+8. `bulk.html`：旧批量导入页面 / 暂停维护页面
 
-7. legacy words 兼容逻辑
-   - 存在旧 key：`ieltsTypingLearnerWords`。
-   - `input.html`、`library.html`、`practice.html`、`script.js` 都有读取旧单词数据并转换为默认词库的兼容逻辑。
+注意：
 
-## 五、错词规则
+`app.html` 和 `bulk.html` 默认不作为当前主流程页面，不在普通任务中随意修改。
 
-1. 同一个单词在一轮练习中错多次，`wrongCount` 只加 1。
+---
 
-2. 下一轮再次错同一个单词，`wrongCount` 再加 1。
+## 5. 当前数据结构状态
 
-3. `roundWrongAttempts` 用于统计本轮总错误次数。同一单词一轮内错多次，会累计多次。
+当前本地版主要使用 localStorage。
 
-4. `roundWrongWords` 用于统计本轮错过的不同单词数量。同一单词一轮内错多次，只统计为 1 个不同错词。
+主要 key：
 
-5. `correctStreak` 当前规则
-   - 只在 `practice.html?mode=wrong` 的错词练习中答对时增加。
-   - 答错时会将该错词的 `correctStreak` 重置为 0。
-   - 当 `correctStreak >= 2` 时，该词会自动从当前词库 `wrongWords` 中移除。
+1. `ieltsTypingLearnerLibraries`
+2. `ieltsTypingLearnerCurrentLibraryId`
+3. `ieltsTypingLearnerDataVersion`
+4. `ieltsTypingLearnerExampleMode`
+5. `ieltsTypingLearnerPracticeOrder`
 
-6. `wrong.html` 的“移出错词”
-   - 只删除当前词库 `wrongWords` 中的记录。
-   - 不删除当前词库 `words` 中的原单词。
+旧兼容 key：
 
-## 六、当前开发约束
+1. `ieltsTypingLearnerWords`
 
-1. 每次只做一个小功能。
-2. 开始前先执行 `git status`。
-3. 如果 working tree 不是 clean，先说明未提交文件，不要直接乱改。
-4. 不要修改 `app.html` / `bulk.html`。
-5. 不要引入 React、Vue、Node、数据库或后端。
-6. 不要重写项目。
-7. 样式复用 `style.css`。
-8. 新增样式要少量添加，并复用现有结构。
-9. 做完后说明修改文件和测试方式。
+当前 V2 字段包括：
 
-## 七、当前仍需注意的问题
+### library 级字段
 
-1. 多个页面重复实现 localStorage 读写和 normalize 逻辑
-   - `input.html`、`library.html`、`practice.html`、`wrong.html`、`settings.html`、`script.js` 都有各自的存储逻辑。
-   - 后续维护时容易出现字段默认值或兼容规则不一致。
+1. `id`
+2. `name`
+3. `source`
+4. `createdAt`
+5. `updatedAt`
+6. `lastPracticedAt`
+7. `totalPracticeRounds`
+8. `words`
+9. `wrongWords`
 
-2. `app.html` / `script.js` 与新页面主流程不完全一致
-   - `app.html` 是旧功能备份页，仍引用 `script.js`。
-   - `script.js` 中也有错词、导入导出、练习统计等逻辑，但当前主流程已拆到多个 HTML 页面。
-   - 后续如果继续保留旧页，需要明确它只是备份，避免误以为它和新页面规则完全同步。
+### word 级字段
 
-3. `bulk.html` 与当前开发规则存在维护边界
-   - `input.html` 仍能跳转到 `bulk.html`。
-   - 但当前规则要求一般不修改 `bulk.html`，后续若继续完善批量导入，需要先确认是否恢复该页面为主流程的一部分。
+1. `id`
+2. `english`
+3. `chinese`
+4. `example`
+5. `source`
+6. `createdAt`
+7. `updatedAt`
+8. `practiceCount`
+9. `correctCount`
+10. `wrongRoundCount`
+11. `correctStreak`
+12. `lastPracticedAt`
+13. `mastered`
+14. `masteredAt`
+15. `inWrongBook`
 
-4. README.md 信息偏旧
-   - README 仍描述较早期的功能状态。
-   - 当前已经有 `library.html`、`settings.html`、`wrong.html`、错词练习模式、数据导入导出、词库排序等功能，README 尚未同步。
+具体说明见：
 
-5. 页面之间的空状态和按钮禁用规则仍需持续检查
-   - `library.html`、`wrong.html`、`practice.html` 已有不少空状态和 disabled 逻辑。
-   - 后续新增入口时要同步检查“无词库、无单词、无错词、当前 ID 失效”等状态。
+- `DATA_MODEL_V2.md`
 
-6. 样式命名逐渐混合
-   - 新页面大量复用 `home-`、`practice-`、`library-` 类名。
-   - 复用降低了样式成本，但也让页面职责和类名前缀不完全对应。
+---
 
-7. 导入数据校验较轻
-   - `settings.html` 的备份导入主要校验备份外形，再按 key 恢复字符串。
-   - 对 `libraries` 内部字段的深度校验主要依赖各页面加载时 normalize。
+## 6. 当前商业化目标
 
-8. 编码显示需要留意
-   - 在当前 PowerShell 输出中，部分中文文件内容显示为乱码。
-   - 这可能是终端编码问题，但后续编辑中文文档和页面文案时仍应注意 UTF-8 保存。
+`commercial-v1` 的目标版本：
 
-## 八、下一步建议
+IELTS Typing Learner 国内商业化 Web 版 V1
 
-1. 先提交当前稳定版本。
-2. 更新 `README.md`。
-3. 后续再明确 `bulk.html` 是否继续纳入主流程。
-4. 后续再考虑抽离 `shared.js` 统一 localStorage 和 normalize 逻辑。
-5. 后续补充一组手动测试清单。
+V1 要做：
+
+1. 注册 / 登录
+2. 云端保存词库
+3. 云端保存练习记录
+4. 错词复习
+5. 首页学习统计
+6. 免费额度限制
+7. 一个会员套餐
+8. 支付宝支付
+9. 支付成功自动开通会员
+10. 留言反馈
+11. 简单管理后台
+
+V1 暂时不做：
+
+1. 微信支付
+2. 小程序
+3. AI 写作批改
+4. AI 口语陪练
+5. 完整雅思模考
+6. 大规模内置词库
+7. 社区 / 排行榜
+8. 多套餐 / 优惠券 / 分销
+9. 自动续费
+10. 移动 App
+
+---
+
+## 7. 当前开发环境状态
+
+当前本地开发环境已经准备：
+
+1. Git：可用
+2. VS Code：可用
+3. Node.js：已安装
+4. npm：已安装
+5. MySQL Server 8.0.46：已安装
+6. mysql 命令：可用
+7. DBeaver：已安装
+8. DBeaver 已连接本地 MySQL
+9. `SELECT VERSION()` 测试成功，返回 `8.0.46`
+10. Apifox：已安装
+
+当前 MySQL 状态：
+
+1. 本地 MySQL 服务已启动
+2. root 用户可登录
+3. DBeaver 可连接 `localhost:3306`
+4. 当前还没有正式创建项目数据库表
+
+---
+
+## 8. 当前文档状态
+
+已有文档：
+
+1. `README.md`
+2. `PROJECT_STATUS.md`
+3. `PRODUCT_DIRECTION.md`
+4. `COMPETITOR_RESEARCH.md`
+5. `DATA_MODEL_V2.md`
+6. `CODEX_RULES.md`
+7. `CLOUD_VERSION_PLAN.md`
+8. `AGENTS.md`
+9. `DOC_INDEX.md`
+
+准备新增或完善：
+
+1. `FRONTEND_REVIEW.md`
+2. `API_DESIGN.md`
+3. `DATABASE_SCHEMA.md`
+4. `PAYMENT_FLOW.md`
+5. `DEPLOYMENT_PLAN.md`
+6. `CHANGELOG.md`
+
+当前正在进行：
+
+第 2.5 阶段：文档重整与前端复盘
+
+---
+
+## 9. 当前阶段
+
+当前阶段不是后端开发。
+
+当前阶段是：
+
+第 2.5 阶段：文档重整与前端复盘
+
+目标：
+
+1. 清理旧文档和新目标的冲突
+2. 明确 `main` 和 `commercial-v1` 的区别
+3. 新增 `AGENTS.md`
+4. 新增 `DOC_INDEX.md`
+5. 更新 `PRODUCT_DIRECTION.md`
+6. 更新 `README.md`
+7. 更新 `CODEX_RULES.md`
+8. 新增 `FRONTEND_REVIEW.md`
+9. 再决定前端页面改造顺序
+10. 最后进入后端骨架
+
+---
+
+## 10. 下一步建议
+
+推荐顺序：
+
+1. 完成文档重整
+2. 压缩项目给 ChatGPT 检查文档一致性
+3. 根据检查结果修正文档
+4. 新增 `FRONTEND_REVIEW.md`
+5. 复盘现有前端页面
+6. 决定商业化版页面结构
+7. 再进入第 3 阶段：后端骨架
+
+第 3 阶段目标：
+
+1. 新增 `backend` 目录
+2. 创建 Node.js + Express 基础服务
+3. 新增 `/api/health`
+4. 新增 `.env.example`
+5. 新增 MySQL 连接配置
+6. 不做注册登录
+7. 不建业务表
+8. 不接支付
+
+---
+
+## 11. 当前风险
+
+### 风险 1：旧文档误导 Codex
+
+旧文档中可能还存在：
+
+1. 不做账号系统
+2. 不做云同步
+3. 不做 Node
+4. 不做数据库
+5. 不做后端
+
+这些规则只适合旧的本地版，不适合 `commercial-v1`。
+
+处理方式：
+
+文档必须区分 `main` 和 `commercial-v1`。
+
+---
+
+### 风险 2：前端体验还不够成熟
+
+用户已经反馈：
+
+当前页面已有功能还不满意，需要改进。
+
+处理方式：
+
+不要直接写后端硬接旧页面，先做 `FRONTEND_REVIEW.md`。
+
+---
+
+### 风险 3：过早进入支付
+
+支付涉及：
+
+1. 备案
+2. 商户资质
+3. 订单系统
+4. 异步通知
+5. 验签
+6. 自动开会员
+7. 数据安全
+
+处理方式：
+
+先做注册、词库、练习、会员状态，再做订单和支付。
+
+---
+
+### 风险 4：数据库设计不清晰
+
+一旦开始商业化，用户、词库、单词、练习记录、订单、会员都要进入 MySQL。
+
+处理方式：
+
+后续必须创建 `DATABASE_SCHEMA.md`。
+
+---
+
+## 12. 当前 Git 原则
+
+每次任务前：
+
+1. `git status`
+2. `git branch`
+
+如果工作区不 clean：
+
+1. 停止
+2. 说明未提交文件
+3. 等用户确认
+
+不要自动提交。
+
+提交前必须：
+
+1. `git status`
+2. `git diff --stat`
+3. 只添加本次任务相关文件
+
+不要随便使用：
+
+`git add .`
+
+除非用户明确确认。
+
+---
+
+## 13. 当前重要结论
+
+当前项目重点已经从“继续堆功能”转为：
+
+先理清文档、前端、商业化路线，再继续写代码。
+
+当前最重要的一句话：
+
+保护 `main`，放开 `commercial-v1`；文档先行，小步开发，重大变更先确认。
